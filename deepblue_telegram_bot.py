@@ -1,7 +1,7 @@
 import os
+import time
 import asyncio
 from datetime import datetime
-import pytz
 
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup,\
@@ -67,52 +67,63 @@ async def set_timer(client, message):
             return await message.reply('The message command had less then 3 commands, hmm there is an error here!!!!. Incorrect format!! ¿Here we should have a message describing the correct format?')
         
         else:
-            ## must be a time and not an amount of time and cross reference that with current time to extract amount of time
-            ## No checks for negative?
-            #countdown_start_datetime = datetime.datetime.now()
-            # datetime = year, mouth, day, hour, minute, second, miliseconds
-            #countdown_end_datetime = (
-            #    int(message.command[1]), int(message.command[2]), 
-            #    int(message.command[3]), int(message.command[4]), 
-            #    int(0), int(0), int(0)
-            #    )
-            user_input_time = int(message.command[1])
+            end_countdown_datetime = datetime(
+                int(message.command[2]), int(message.command[3]),
+                int(message.command[4]), int(message.command[5]),
+                int(message.command[6]), int(message.command[7])
+            )
 
-            ## Improve by removing the need for ""
-            user_input_event = str(message.command[2])
+            inicial_event_message = str(message.command[1])
 
-            ## Why does it say get if it is sending a message to the user?
-            get_user_input_time = await app.send_message(message.chat.id, user_input_time)
-            print("Test print statement, it relates to get_user_input_time and seems to be required to .pin()", get_user_input_time) 
-            ## It seems like the name is due to the requirement of the nessage chat id to pin the message? 
-            await get_user_input_time.pin()
 
-            ## seems redundent, is it necessary? 
-            ## is paused and stoped the same? else could i terminate the code instead?
+            active_message = await app.send_message(message.chat.id, inicial_event_message)
+            await active_message.pin()
+
             if stop_timer:
-                print("Test print, timer was currently stopped == True", stop_timer)
                 stop_timer = False
 
-            ## goint to start by making one that only counts for 10 seconds
-            if 0<user_input_time<=10:
-                ## how would user_input_time turn falls here?
-                while user_input_time and not stop_timer:
-                    ## whats 's'
-                    s=user_input_time%60
-                    print("Test for figure out what the formating is doing: s=user_input_time%60", s, user_input_time)
-                    countdown_message='&#11035;&#11035;&#11035;&#11035;&#11035;&#11035;\n&#11035;&#11035;&#11035;&#11035;&#11035;&#11035;\n&#11035;&#11035;&#11035;&#11035;&#11035;&#11035;\n&#11035;&#11035;&#11035;&#11035;&#11035;&#11035;\n&#11035;&#11035;&#11035;&#11035;&#11035;&#11035;\n&#11035;&#11035;&#11035;&#11035;&#11035;&#11035;\n"{}\n\n⏳ {:02d}**s**\n\n<i>DeepBlue'.format(user_input_event, s)
-                    finish_countdown = await get_user_input_time.edit(countdown_message)
-                    await asyncio.sleep(1)
-                    user_input_time -=1
-                await finish_countdown.edit("**TIME'S UP**")
-            
-            else:
-                ## must modify message
-                await get_user_input_time.edit(f"🤷🏻‍♂️ I can't countdown from {user_input_time}")
-                await get_user_input_time.unpin()
+            day = datetime(2021, 1, 2, 0, 0, 0) - datetime(2021, 1, 1, 0, 0, 0)
+            hour = datetime(2021, 1, 1, 1, 0, 0) - datetime(2021, 1, 1, 0, 0, 0)
+            minute = datetime(2021, 1, 1, 1, 1, 0) - datetime(2021, 1, 1, 1, 0, 0)
+
+            while stop_timer == False:
+                print('stop_timer is:', stop_timer)
+                if end_countdown_datetime < datetime.now():
+                    stop_timer = True
+                    print('stop_timer was set to:',stop_timer, 'timer should stop')
+                elif end_countdown_datetime > datetime.now():
+                    stop_timer = False
+                    print('stop_timer was set to:',stop_timer)
+
+
+                countdown_timer = end_countdown_datetime - datetime.now()
+                print('countdown_timer is:', countdown_timer)
+                print('end_countdown_datetime is:', end_countdown_datetime)
+                print('datetime.now() is:', datetime.now())
+
+                if countdown_timer > day:
+                    updated_message = "There are {} days left before the event".format(countdown_timer.days)
+                    active_message = await active_message.edit(updated_message)
+                    next_update = countdown_timer.seconds
+                    print('next update in', next_update)
+                    time.sleep(next_update)
+                    
+                elif countdown_timer > hour:
+                    print('timer is larger then 1 hour')
+                    
+                    updated_message = "There is {} left before the event".format(countdown_timer)
+                    active_message = await active_message.edit(updated_message)
+                    time.sleep(3600)
+
+                else:
+                    print('timer is smaller then 1 hour', countdown_timer.seconds)
+                    updated_message = "{} in {} seconds".format(inicial_event_message, countdown_timer.seconds)
+                    active_message = await active_message.edit(updated_message)
+                    time.sleep(5)
+
+            await active_message.edit("**TIME'S UP**")
 
     except FloodWait as e:
-        # What is X? 
         await asyncio.sleep(e.x)
 
 @app.on_message(filters.command('stop'))
