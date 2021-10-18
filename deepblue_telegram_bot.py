@@ -67,16 +67,25 @@ async def set_timer(client, message):
             return await message.reply('The message command had less then 3 commands, hmm there is an error here!!!!. Incorrect format!! ¿Here we should have a message describing the correct format?')
         
         else:
+            end_datetime_input = str(message.command[1]).split()
+            countdown_year = int(end_datetime_input[0])
+            countdown_month = int(end_datetime_input[1])
+            countdown_day = int(end_datetime_input[2])
+            countdown_hour = int(end_datetime_input[3])
+            countdown_minute = int(end_datetime_input[4])
+            countdown_second = int(0)
+
             end_countdown_datetime = datetime(
-                int(message.command[2]), int(message.command[3]),
-                int(message.command[4]), int(message.command[5]),
-                int(message.command[6]), int(message.command[7])
+                countdown_year, countdown_month, countdown_day, 
+                countdown_hour, countdown_minute, countdown_second
             )
 
-            inicial_event_message = str(message.command[1])
+            inicial_event_message = str(message.command[2])
 
-
-            active_message = await app.send_message(message.chat.id, inicial_event_message)
+            active_message = await app.send_message(
+                message.chat.id, 
+                inicial_event_message + str(end_countdown_datetime)
+            )
             await active_message.pin()
 
             if stop_timer:
