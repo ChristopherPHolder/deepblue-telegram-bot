@@ -1,5 +1,4 @@
 import os
-import time
 import asyncio
 from datetime import datetime
 
@@ -7,6 +6,9 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup,\
 CallbackQuery
 from pyrogram.errors import MessageNotModified, FloodWait
+
+from message_formater import update_message
+from user_input_extractor import end_date_in_datetime
 
 from callback_messages import START_TEXT, HELP_TEXT
 from callback_numbers import EMOJI_NUMBERS
@@ -53,7 +55,6 @@ async def callback_query(query: CallbackQuery):
             )
         except MessageNotModified as e:
             print(e.message)
-            pass
 
 @app.on_message(filters.command('set'))
 async def set_timer(client, message):
@@ -69,21 +70,10 @@ async def set_timer(client, message):
         
         else:
             end_datetime_input = str(message.command[1]).split()
-            countdown_year = int(end_datetime_input[0])
-            countdown_month = int(end_datetime_input[1])
-            countdown_day = int(end_datetime_input[2])
-            countdown_hour = int(end_datetime_input[3])
-            countdown_minute = int(end_datetime_input[4])
-            countdown_second = int(0)
-
-            end_countdown_datetime = datetime(
-                countdown_year, countdown_month, countdown_day, 
-                countdown_hour, countdown_minute, countdown_second
-            )
+            end_countdown_datetime = end_date_in_datetime(end_datetime_input)
 
             inicial_event_message = str(message.command[2])
             event_link = str(message.command[3])
-            final_event_message = str(message.command[4])
 
             active_message = await app.send_message(
                 message.chat.id, 
@@ -112,15 +102,8 @@ async def set_timer(client, message):
                 if countdown_timer > day\
                 and countdown_days != countdown_timer.days:
                     countdown_days = countdown_timer.days
-                    updated_message = "\
-<b>{}</b>\n\n\
-🚀⏳ {} days\n\n\
-🗓 Make user not to miss it by adding it to your calendar\n\
-🔗<a href='{}'>Add to calendar</a>\n\n\
-<a href='https://infinitypad.com'> <b> On INFINITY PAD </b> </a>".format(
-                        inicial_event_message,
-                        countdown_day,
-                        event_link
+                    updated_message = update_message(
+                        inicial_event_message, countdown_timer, event_link
                     )
                     active_message = await active_message.edit(updated_message)
                     await asyncio.sleep(5)
@@ -128,63 +111,33 @@ async def set_timer(client, message):
                 elif countdown_timer < day\
                 and countdown_timer > hour\
                 and countdown_minutes != countdown_timer.seconds%3600//60:
-                    countdown_hours = countdown_timer.seconds%(3600*24)//3600
-                    countdown_minutes = countdown_timer.seconds%3600//60
-                    updated_message = "\
-<b>{}</b>\n\n\
-🚀⏳ {} hours and {} minutes\n\n\
-🗓 Make user not to miss it by adding it to your calendar\n\
-🔗<a href='{}'>Add to calendar</a>\n\n".format(
-                        inicial_event_message,
-                        countdown_hours,
-                        countdown_minutes,
-                        event_link
+                    updated_message = update_message(
+                        inicial_event_message, countdown_timer, event_link
                     )
                     active_message = await active_message.edit(updated_message)
                     await asyncio.sleep(5)
 
                 elif countdown_timer < hour\
-                and countdown_timer.seconds > 10\
+                and countdown_timer.seconds > 59\
                 and countdown_minutes != countdown_timer.seconds%3600//60:
                     countdown_minutes = countdown_timer.seconds%3600//60
-                    updated_message = "\
-<b>{}</b>\n\n\
-🚀⏳ {} minutes\n\n\
-Be the first to got your coin\n\
-<a href='https://infinitypad.com'>🔗 Get your coin </a>\n\n\
-Any questions check out our FAQ\n\n".format(
-                        inicial_event_message,
-                        countdown_minutes + 1,
-                        event_link
+                    updated_message = update_message(
+                        inicial_event_message, countdown_timer, event_link
                     )
-                    print('Time is ->>', datetime.now())
-                    await asyncio.sleep(1)
                     active_message = await active_message.edit(updated_message)
+                    await asyncio.sleep(1)
 
-                elif countdown_timer.seconds < 10\
+                elif countdown_timer.seconds < 59\
                 and countdown_seconds != countdown_timer.seconds:
                     if end_countdown_datetime < datetime.now():
                         stop_timer = True
-                    elif 61 > countdown_timer.seconds > -1:
-                        number_of_seconds = countdown_timer.seconds 
-                        print(number_of_seconds)
-                        final_countdown_timer = EMOJI_NUMBERS[number_of_seconds]
-                        updated_message = "\
-<b>{}</b> in {} seconds\n\n\
-Be the first to got your coin\n\
-<a href=''>🔗 Get your coin </a>\n\n\
-Any questions check out our FAQ\n\n\
-{}\
-".format(
-    inicial_event_message, 
-    countdown_timer.seconds,
-    final_countdown_timer
-)                       
-                        if updated_message != active_message\
-                        and final_countdown_timer != past_final_countdown_timer:
-                            past_final_countdown_timer = final_countdown_timer
-                            await asyncio.sleep(1)
+                    elif 59 > countdown_timer.seconds > -1:
+                        updated_message = updated_message = update_message(
+                            inicial_event_message, countdown_timer, event_link
+                        )
+                        if updated_message != active_message:
                             active_message = await active_message.edit(updated_message)
+                            await asyncio.sleep(1)
 
                 if end_countdown_datetime < datetime.now():
                     stop_timer = True
