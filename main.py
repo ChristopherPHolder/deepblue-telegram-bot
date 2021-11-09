@@ -93,8 +93,8 @@ async def set_timer(client, message):
                     if updated_message != active_message:
                         active_message = await active_message.edit(updated_message)
                         stop_timer = True
-                        await asyncio.sleep(1)
-                        break
+                        exit()
+
 
                 else:
                     updated_message = update_message(
