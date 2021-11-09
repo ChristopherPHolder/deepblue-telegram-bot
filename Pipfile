@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 pyrogram = "*"
 pipfile = "*"
+tgcrypto = "*"
 
 [dev-packages]
 
