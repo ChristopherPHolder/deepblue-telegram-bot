@@ -1,6 +1,7 @@
 # msg = message
 # ctl = call to action
-from datetime import datetime
+from callback_numbers import EMOJI_NUMBERS
+
 
 def update_message(inicial_event_message, countdown_timer, event_link):
     inicial_msg = inicial_event_message
@@ -41,3 +42,9 @@ def format_event_link_msg(event_link):
     )
 
     return event_link_msg
+
+def format_emoji_countdown(hours, minutes):
+    hours_in_emojis = EMOJI_NUMBERS
+
+    emoji_countdown = ''
+    return emoji_countdown

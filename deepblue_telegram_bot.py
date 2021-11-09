@@ -1,6 +1,7 @@
 import os
 import asyncio
 from datetime import datetime
+import random
 
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup,\
@@ -106,7 +107,7 @@ async def set_timer(client, message):
                         inicial_event_message, countdown_timer, event_link
                     )
                     active_message = await active_message.edit(updated_message)
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(random.randint(4, 8))
                     
                 elif countdown_timer < day\
                 and countdown_timer > hour\
@@ -115,7 +116,7 @@ async def set_timer(client, message):
                         inicial_event_message, countdown_timer, event_link
                     )
                     active_message = await active_message.edit(updated_message)
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(random.randint(4, 8))
 
                 elif countdown_timer < hour\
                 and countdown_timer.seconds > 59\
@@ -137,7 +138,7 @@ async def set_timer(client, message):
                         )
                         if updated_message != active_message:
                             active_message = await active_message.edit(updated_message)
-                            await asyncio.sleep(1)
+                            await asyncio.sleep(random.randint(4, 8))
 
                 if end_countdown_datetime < datetime.now():
                     stop_timer = True
