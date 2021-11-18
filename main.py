@@ -89,20 +89,21 @@ async def set_timer(client, message):
 
                 if end_countdown_datetime < datetime.now():
                     updated_message = '<b>🚀 We launched 🚀</b>\n\n Go to our Launch Pad and get your coins\n <a href="https://infinitypad.com"> 🔗 <u> Get your coin</u> </a>\n\n If you are having issues try our <a href="https://infinitypad.com"> <b> FAQ </b> </a> or contact <a href="tg://user?id=2012629014"> <i> Chris </i> </a>'
-                    
+
                     if updated_message != active_message:
                         active_message = await active_message.edit(updated_message)
                         stop_timer = True
-                        exit()
-
 
                 else:
                     updated_message = update_message(
                         inicial_event_message, countdown_timer, event_link
                     )
-                    active_message = await active_message.edit(updated_message)
-                    await asyncio.sleep(random.randint(4, 8))
-                
+                    if updated_message != active_message:
+                        active_message = await active_message.edit(updated_message)
+                        await asyncio.sleep(random.randint(4, 8))
+                    else:
+                        print('Error with identical text?')
+
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
@@ -120,6 +121,22 @@ async def stop_countdown_timer(Client, message):
 
     except FloodWait as e:
         await asyncio.sleep(e.x)
+
+@app.on_message(filters.command('kill'))
+async def stop_countdown_timer(Client, message):
+    global stop_timer
+    try:
+        if (await app.get_chat_member(message.chat.id,message.from_user.id)).can_manage_chat:
+            stop_timer = True
+            await message.reply('🛑 I am being terminated good bye friends.')
+            print('Terminating Countdown')
+            exit()
+        else:
+            await message.reply('👮🏻‍♂️ Sorry, **only admins** can execute this command.')
+
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
+
 
 print("Countdown is alive!")
 app.run()
