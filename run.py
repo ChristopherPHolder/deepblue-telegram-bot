@@ -35,12 +35,13 @@
     # if not admin, log event
 
 ## Command /create name
-    # Only in admin chat
+    # only in admin chat
 
 ## Command /edit id field data
-    # Only countdown owners
+    # only countdown owners
 
 ## Command /preview id
+    # only in admin chat
 
 ## Command /stop
     # only countdown owners
