@@ -10,7 +10,7 @@ sequence_details = {
         {
             'action_name': 'add_date',
             'field_name': 'countdown_date',
-            'input_type': 'text',
+            'input_type': 'date_time',
             'followup_action': 'add_message',
             'followup_message': f'What do you want the countdown message to be?'
         },

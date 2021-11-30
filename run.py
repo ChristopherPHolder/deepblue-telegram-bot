@@ -11,7 +11,9 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup,\
 CallbackQuery, ReplyKeyboardMarkup, ForceReply
 
 from callback_messages import HELP_TEXT
+from user_input_extractor import convert_input_to_datetime
 from sequence_details import sequence_details
+
 #logging.basicConfig(filename='run.log', level=logging.DEBUG,
 #                    format='%(asctime)s:%(levelname)s:%(message)s')
 
@@ -52,11 +54,39 @@ sequences = []
             # send private error message
     # if not admin, log event
 
-def update_countdown_data(countdown_id, field_name, field_data):
+async def update_countdown_data(countdown_id, field_name, field_data):
     global countdowns
     for countdown in countdowns:
         if countdown['countdown_id'] == countdown_id:
             countdown.update({field_name: field_data})
+
+async def extract_field_data(action, message):
+    if action['input_type'] == 'text':
+        return message.text
+
+    if action['input_type'] == 'date_time':
+        return convert_input_to_datetime(message.text)
+
+    elif action['input_type'] == 'image':
+        return await app.download_media(message)
+
+async def create_sequence_manager(sequence, message):
+    for action in sequence_details['create_actions']:
+        if sequence['action'] == action['action_name']:
+
+            field_data = await extract_field_data(action, message)
+
+            await update_countdown_data(sequence['countdown_id'], 
+                                action['field_name'], field_data)
+
+            if action['followup_action']:
+                sequence.update({'action': action['followup_action']})
+                return await app.send_message(message.chat.id, 
+                                    action['followup_message'], 
+                                    reply_markup=ForceReply())
+            else:
+                return await app.send_message(message.chat.id, 
+                                    action['followup_message'])
 
 @app.on_message(filters.reply)
 async def add_countdown_information(client, message):
@@ -66,29 +96,7 @@ async def add_countdown_information(client, message):
         for sequence in sequences:
             if user_id == sequence['user_id']:
                 if sequence['sequence'] == 'create_countdown':
-                    for action in sequence_details['create_actions']:
-                        if sequence['action'] == action['action_name']:
-                            if action['input_type'] == 'text':
-                                field_data = message.text
-                            elif action['input_type'] == 'image':
-                                field_data = await app.download_media(message)
-                            update_countdown_data(
-                                sequence['countdown_id'], 
-                                action['field_name'],
-                                field_data
-                            )
-                            if action['followup_action']:
-                                sequence.update({'action': action['followup_action']})
-                                return await app.send_message(
-                                    message.chat.id, 
-                                    action['followup_message'], 
-                                    reply_markup=ForceReply()
-                                    )
-                            else:
-                                return await app.send_message(
-                                    message.chat.id, 
-                                    action['followup_message']
-                                    )
+                    return await create_sequence_manager(sequence, message)
 
     except FloodWait as e:
         await asyncio.sleep(e.x)
@@ -96,14 +104,12 @@ async def add_countdown_information(client, message):
 
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
-    global countdowns
-    global sequences
+    global countdowns, sequences
     countdown_id = uuid4()
     user_id = message.from_user.id
 
     countdown = {
-        'countdown_id': countdown_id,
-        'countdown_owner_id': user_id,
+        'countdown_id': countdown_id, 'countdown_owner_id': user_id,
         'countdown_onwner_username': message.from_user.username,
         }
 
@@ -115,12 +121,9 @@ async def create_countdown(client, message):
         
         sequence_id = uuid4()
         sequence = {
-            'sequence_id': sequence_id,
-            'user_id': user_id,
-            'sequence': 'create_countdown',
-            'action': 'add_name',
-            'countdown_id': countdown_id,
-            'status': 'response_pending',
+            'sequence_id': sequence_id, 'user_id': user_id,
+            'sequence': 'create_countdown', 'action': 'add_name',
+            'countdown_id': countdown_id, 'status': 'response_pending',
         }
 
         countdowns.append(countdown)
