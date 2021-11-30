@@ -11,7 +11,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup,\
 CallbackQuery, ReplyKeyboardMarkup, ForceReply
 
 from callback_messages import HELP_TEXT
-
+from sequence_details import sequence_details
 #logging.basicConfig(filename='run.log', level=logging.DEBUG,
 #                    format='%(asctime)s:%(levelname)s:%(message)s')
 
@@ -66,36 +66,29 @@ async def add_countdown_information(client, message):
         for sequence in sequences:
             if user_id == sequence['user_id']:
                 if sequence['sequence'] == 'create_countdown':
-                    countdown_id = sequence['countdown_id']
-
-                    if sequence['action'] == 'add_name':
-                        update_countdown_data(countdown_id, 'countdown_name', message.text)
-                        sequence.update({'action': 'add_message'})
-                        await app.send_message(message.chat.id, f'What is the end date and time in utc for "{message.text}"?',reply_markup=ForceReply())
-
-                    elif sequence['action'] == 'add_date':
-                        update_countdown_data(countdown_id, 'countdown_date', message.text)
-                        sequence.update({'action': 'add_message'})
-                        await app.send_message(message.chat.id, f'What do you want the countdown message to be?', reply_markup=ForceReply())
-
-                    elif sequence['action'] == 'add_message':
-                        update_countdown_data(countdown_id, 'countdown_message', message.text)
-                        sequence.update({'action': 'add_link'})
-                        await app.send_message(message.chat.id, f'What do you want the countdown link to be?', reply_markup=ForceReply())
-
-                    elif sequence['action'] == 'add_link':
-                        update_countdown_data(countdown_id, 'countdown_link', message.text)
-                        sequence.update({'action': 'add_image'})
-                        await app.send_message(message.chat.id, f'What image do you want at the end of the countdown?', reply_markup=ForceReply())
-
-                    elif sequence['action'] == 'add_image':
-                        update_countdown_data(countdown_id, 'countdown_image', message.text)
-                        ## Incorrect, still TODO ## message.save_media
-                        sequence.update({'action': 'add_caption'})
-                        await app.send_message(message.chat.id, f'What image do you want at the end of the countdown?', reply_markup=ForceReply())
-
-                    elif sequence['action'] == 'add_caption':
-                        update_countdown_data(countdown_id, 'countdown_caption', message.text)
+                    for action in sequence_details['create_actions']:
+                        if sequence['action'] == action['action_name']:
+                            if action['input_type'] == 'text':
+                                field_data = message.text
+                            elif action['input_type'] == 'image':
+                                field_data = await app.download_media(message)
+                            update_countdown_data(
+                                sequence['countdown_id'], 
+                                action['field_name'],
+                                field_data
+                            )
+                            if action['followup_action']:
+                                sequence.update({'action': action['followup_action']})
+                                return await app.send_message(
+                                    message.chat.id, 
+                                    action['followup_message'], 
+                                    reply_markup=ForceReply()
+                                    )
+                            else:
+                                return await app.send_message(
+                                    message.chat.id, 
+                                    action['followup_message']
+                                    )
 
     except FloodWait as e:
         await asyncio.sleep(e.x)
