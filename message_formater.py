@@ -4,13 +4,10 @@ from callback_numbers import EMOJI_NUMBERS
 
 
 def update_message(inicial_event_message, countdown_timer, event_link):
-    inicial_msg = inicial_event_message
-    countdown_timer_msg = format_timer_msg(countdown_timer)
-    event_link_msg = format_event_link_msg(event_link)
-    updated_message = '{}\n\n{}\n\n{}\n\n'.format(
-        inicial_msg,
-        countdown_timer_msg,
-        event_link_msg
+    updated_message = (
+        f'{inicial_event_message}\n\n' + \
+        f'{format_timer_msg(countdown_timer)}\n\n' + \
+        f'{format_event_link_msg(event_link)}\n\n'
     )
     return updated_message
 
