@@ -2,7 +2,7 @@ sequence_details = {
     'create_actions': [
         {
             'action_name': 'add_name',
-            'field_name': 'countdown_image',
+            'field_name': 'countdown_name',
             'input_type': 'text',
             'followup_action': 'add_date',
             'followup_message': f'What is the end date and time for the countdown?'
