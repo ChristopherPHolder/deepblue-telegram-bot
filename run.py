@@ -63,30 +63,34 @@ async def update_countdown_data(countdown_id, field_name, field_data):
 async def extract_field_data(action, message):
     if action['input_type'] == 'text':
         return message.text
-
     if action['input_type'] == 'date_time':
         return convert_input_to_datetime(message.text)
-
     elif action['input_type'] == 'image':
-        return await app.download_media(message)
+        try:
+            return await app.download_media(message)
+        except ValueError as e:
+            print(e, 'Attempted to extract media!')
+
 
 async def create_sequence_manager(sequence, message):
     for action in sequence_details['create_actions']:
         if sequence['action'] == action['action_name']:
-
             field_data = await extract_field_data(action, message)
-
-            await update_countdown_data(sequence['countdown_id'], 
-                                action['field_name'], field_data)
-
-            if action['followup_action']:
-                sequence.update({'action': action['followup_action']})
-                return await app.send_message(message.chat.id, 
-                                    action['followup_message'], 
-                                    reply_markup=ForceReply())
+            if field_data:
+                await update_countdown_data(sequence['countdown_id'], 
+                                    action['field_name'], field_data)
+                if action['followup_action']:
+                    sequence.update({'action': action['followup_action']})
+                    return await app.send_message(message.chat.id, 
+                                        action['followup_message'], 
+                                        reply_markup=ForceReply())
+                else:
+                    return await app.send_message(message.chat.id, 
+                                        action['followup_message'])
             else:
                 return await app.send_message(message.chat.id, 
-                                    action['followup_message'])
+                                        action['retry_message'], 
+                                        reply_markup=ForceReply())
 
 @app.on_message(filters.reply)
 async def add_countdown_information(client, message):
@@ -117,14 +121,14 @@ async def create_countdown(client, message):
         await message.reply(
             'What do you want to name the countdown?', 
             reply_markup=ForceReply()
-        )
+            )
         
         sequence_id = uuid4()
         sequence = {
             'sequence_id': sequence_id, 'user_id': user_id,
             'sequence': 'create_countdown', 'action': 'add_name',
             'countdown_id': countdown_id, 'status': 'response_pending',
-        }
+            }
 
         countdowns.append(countdown)
         sequences.append(sequence)
