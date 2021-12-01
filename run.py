@@ -99,6 +99,43 @@ async def create_sequence_manager(sequence, message):
                                         action['retry_message'], 
                                         reply_markup=ForceReply())
 
+async def add_countdown_to_sequence(sequence, message):
+    global countdowns, sequences
+    for countdown in countdowns:
+        if message.text == countdown['countdown_name']:
+            sequence.update({'countdown_id': countdown['countdown_id']})
+
+async def create_display_countdown_fields(sequence):
+    global countdowns
+    display_fields = []
+    
+    for countdown in countdowns:
+        if countdown['countdown_id'] == sequence['countdown_id']:
+            countdown_keys = countdown.keys()
+    for key in countdown_keys:
+        if key != 'countdown_id':
+            display_fields.append([key])
+
+    print(display_fields)
+    return display_fields
+
+
+
+async def edit_sequence_manager(sequence, message):
+    for action in sequence_details['edit_actions']:
+        if sequence['action'] == 'select_countdown':
+            await add_countdown_to_sequence(sequence, message)
+            countdown_fields = await create_display_countdown_fields(sequence)
+            await app.send_message(
+                message.chat.id, 
+                action['followup_message'],
+                reply_markup=ReplyKeyboardMarkup(
+                    countdown_fields,
+                    resize_keyboard=True
+                )
+            )
+            
+
 @app.on_message(filters.reply)
 async def add_countdown_information(client, message):
     global sequences
@@ -108,6 +145,8 @@ async def add_countdown_information(client, message):
             if user_id == sequence['user_id']:
                 if sequence['sequence'] == 'create_countdown':
                     return await create_sequence_manager(sequence, message)
+                elif sequence['sequence'] == 'edit_countdown':
+                    return await edit_sequence_manager(sequence, message)
 
     except FloodWait as e:
         await asyncio.sleep(e.x)
@@ -120,29 +159,33 @@ def create_countdown_dict(countdown_id, message):
         }
     return countdown
 
-def create_sequence_dict(sequence_id, countdown_id, message):
+def create_sequence_dict( countdown_id, message):
     sequence = {
-        'sequence_id': sequence_id, 
-        'user_id': message.from_user.username,
         'sequence': 'create_countdown', 
         'action': 'add_name',
+        'sequence_id': uuid4(), 
+        'user_id': message.from_user.id,
         'countdown_id': countdown_id, 
         'status': 'response_pending',
         }
+    return sequence
 
+def edit_sequence_dict(message):
+    sequence = {
+        'sequence': 'edit_countdown',
+        'sequence_id': uuid4(), 
+        'user_id': message.from_user.id,
+        'action': 'select_countdown',
+        'status': 'response_pending',
+        }
     return sequence
 
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
     global countdowns, sequences
     countdown_id = uuid4()
-    sequence_id = uuid4()
-
-    countdown = create_countdown_dict(countdown_id, message)
-    sequence = create_sequence_dict(sequence_id, countdown_id, message)
-
-    countdowns.append(countdown)
-    sequences.append(sequence)
+    countdowns.append(create_countdown_dict(countdown_id, message))
+    sequences.append(create_sequence_dict(countdown_id, message))
 
     try:
         await message.reply(
@@ -152,8 +195,28 @@ async def create_countdown(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-## Command /edit id field data
-    # only countdown owners
+def create_display_countdown_lists():
+    global countdowns
+    countdown_lists = []
+    for countdown in countdowns:
+        countdown_lists.append([countdown['countdown_name']])
+    return countdown_lists
+
+@app.on_message(filters.command('edit'))
+async def edit_countdown(client, message):
+    global sequences
+    sequences.append(edit_sequence_dict(message))
+    display_countdown = create_display_countdown_lists()
+    try:
+        await message.reply(
+            'Which countdown do you want to edit?',
+            reply_markup=ReplyKeyboardMarkup(
+                display_countdown,
+                resize_keyboard=True
+            )
+        )
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
 
 ## Command /preview id
     # only in admin chat
