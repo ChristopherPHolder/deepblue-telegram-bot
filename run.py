@@ -71,6 +71,12 @@ async def extract_field_data(action, message):
         except ValueError as e:
             print(e, 'Attempted to extract media!')
 
+def remove_sequence_from_sequences(sequence):
+    global sequences
+    try:
+        sequences.remove(sequence)
+    except KeyError as e:
+        print(e)
 
 async def create_sequence_manager(sequence, message):
     for action in sequence_details['create_actions']:
@@ -85,6 +91,7 @@ async def create_sequence_manager(sequence, message):
                                         action['followup_message'], 
                                         reply_markup=ForceReply())
                 else:
+                    remove_sequence_from_sequences(sequence)
                     return await app.send_message(message.chat.id, 
                                         action['followup_message'])
             else:
@@ -105,29 +112,43 @@ async def add_countdown_information(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
+def create_countdown_dict(countdown_id, message):
+    countdown = {
+        'countdown_id': countdown_id, 
+        'countdown_owner_id': message.from_user.id,
+        'countdown_onwner_username': message.from_user.username,
+        }
+    return countdown
+
+def create_sequence_dict(sequence_id, countdown_id, message):
+    sequence = {
+        'sequence_id': sequence_id, 
+        'user_id': message.from_user.username,
+        'sequence': 'create_countdown', 
+        'action': 'add_name',
+        'countdown_id': countdown_id, 
+        'status': 'response_pending',
+        }
+
+    return sequence
+
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
     global countdowns, sequences
     countdown_id = uuid4()
-    user_id = message.from_user.id
+    sequence_id = uuid4()
 
-    countdown = {
-        'countdown_id': countdown_id, 'countdown_owner_id': user_id,
-        'countdown_onwner_username': message.from_user.username,
-        }
+    countdown = create_countdown_dict(countdown_id, message)
+    sequence = create_sequence_dict(sequence_id, countdown_id, message)
+
+    countdowns.append(countdown)
+    sequences.append(sequence)
+
     try:
-        await message.reply('What do you want to name the countdown?', 
-                                            reply_markup=ForceReply())
-        sequence_id = uuid4()
-        sequence = {
-            'sequence_id': sequence_id, 'user_id': user_id,
-            'sequence': 'create_countdown', 'action': 'add_name',
-            'countdown_id': countdown_id, 'status': 'response_pending',
-            }
-
-        countdowns.append(countdown)
-        sequences.append(sequence)
-        
+        await message.reply(
+            'What do you want to name the countdown?', 
+            reply_markup=ForceReply()
+            )
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
