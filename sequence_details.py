@@ -44,9 +44,9 @@ sequence_details = {
             'input_type': 'text',
             'followup_action': None,
             'field_name': 'countdown_image_caption', 
-            'followup_message': f'You countdown has been sucessfully created! Activated using /set'
-        },
-        
+            'followup_message': f'You countdown has been sucessfully created!\nSome commands you might be interested in:'+ \
+                f'\nActivated using /set' + f'\nPreview messages using: /preview' + \
+                f'\nEdit details using: /edit' + f'\nStop an active countdown: /stop'
+        }, 
     ]
-
 }

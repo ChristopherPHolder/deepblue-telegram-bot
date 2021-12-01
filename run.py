@@ -105,7 +105,6 @@ async def add_countdown_information(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
     global countdowns, sequences
@@ -116,13 +115,9 @@ async def create_countdown(client, message):
         'countdown_id': countdown_id, 'countdown_owner_id': user_id,
         'countdown_onwner_username': message.from_user.username,
         }
-
     try:
-        await message.reply(
-            'What do you want to name the countdown?', 
-            reply_markup=ForceReply()
-            )
-        
+        await message.reply('What do you want to name the countdown?', 
+                                            reply_markup=ForceReply())
         sequence_id = uuid4()
         sequence = {
             'sequence_id': sequence_id, 'user_id': user_id,
