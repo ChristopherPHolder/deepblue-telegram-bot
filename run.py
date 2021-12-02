@@ -8,7 +8,7 @@ import logging
 from pyrogram import Client, filters
 from pyrogram.errors import MessageNotModified, FloodWait
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup,\
-CallbackQuery, ReplyKeyboardMarkup, ForceReply
+CallbackQuery, ReplyKeyboardMarkup, ForceReply, ReplyKeyboardRemove
 
 from callback_messages import HELP_TEXT
 from user_input_extractor import convert_input_to_datetime
@@ -60,12 +60,12 @@ async def update_countdown_data(countdown_id, field_name, field_data):
         if countdown['countdown_id'] == countdown_id:
             countdown.update({field_name: field_data})
 
-async def extract_field_data(action, message):
-    if action['input_type'] == 'text':
+async def extract_field_data(input_type, message):
+    if input_type == 'text':
         return message.text
-    if action['input_type'] == 'date_time':
+    if input_type == 'date_time':
         return convert_input_to_datetime(message.text)
-    elif action['input_type'] == 'image':
+    elif input_type == 'image':
         try:
             return await app.download_media(message)
         except ValueError as e:
@@ -81,7 +81,8 @@ def remove_sequence_from_sequences(sequence):
 async def create_sequence_manager(sequence, message):
     for action in sequence_details['create_actions']:
         if sequence['action'] == action['action_name']:
-            field_data = await extract_field_data(action, message)
+            input_type = action['input_type']
+            field_data = await extract_field_data(input_type, message)
             if field_data:
                 await update_countdown_data(sequence['countdown_id'], 
                                     action['field_name'], field_data)
@@ -107,34 +108,69 @@ async def add_countdown_to_sequence(sequence, message):
 
 async def create_display_countdown_fields(sequence):
     global countdowns
-    display_fields = []
-    
-    for countdown in countdowns:
-        if countdown['countdown_id'] == sequence['countdown_id']:
-            countdown_keys = countdown.keys()
-    for key in countdown_keys:
-        if key != 'countdown_id':
-            display_fields.append([key])
+    display_fields = [
+        ['countdown_name', 'countdown_date'],
+        ['countdown_message', 'countdown_link'],
+        ['countdowns_image', 'countdown_image_caption']
+    ]
 
-    print(display_fields)
     return display_fields
-
-
 
 async def edit_sequence_manager(sequence, message):
     for action in sequence_details['edit_actions']:
-        if sequence['action'] == 'select_countdown':
+        if sequence['action'] == action['action_name']\
+        and sequence['action'] == 'select_countdown':
             await add_countdown_to_sequence(sequence, message)
             countdown_fields = await create_display_countdown_fields(sequence)
-            await app.send_message(
-                message.chat.id, 
+            sequence.update({'action': action['followup_action']})
+            return await app.send_message(
+                message.chat.id,
                 action['followup_message'],
                 reply_markup=ReplyKeyboardMarkup(
                     countdown_fields,
-                    resize_keyboard=True
+                    one_time_keyboard=True
                 )
             )
-            
+
+        elif sequence['action'] == action['action_name']\
+            and sequence['action'] == 'select_countdown_field':
+            field_name = message.text
+            sequence.update({'edit_field': field_name})
+            sequence.update({'action': action['followup_action']})
+            return await app.send_message(
+                message.chat.id,
+                action['followup_message'],
+                reply_markup=(
+                    ForceReply()
+                )
+            )
+
+        elif sequence['action'] == action['action_name']\
+            and sequence['action'] == 'edit_data':
+            text_fields = [
+                'countdown_name', 'countdown_message',
+                'countdown_link', 'countdown_caption',
+            ]
+
+            field_name = sequence['edit_field']
+            countdown_id = sequence['countdown_id']
+
+            if field_name in text_fields:
+                input_type = 'text'
+            elif field_name == 'countdown_date':
+                input_type = 'date_time'
+            elif field_name == 'countdown_image':
+                input_type
+            field_data = await extract_field_data(input_type, message)
+            await update_countdown_data(countdown_id, field_name, field_data)
+            remove_sequence_from_sequences(sequence)
+            await app.send_message(message.chat.id, action['followup_message'])
+
+@app.on_message(filters.command('list'))
+async def list_countdowns(client, message):
+    global countdowns
+    await message.reply(countdowns)
+
 
 @app.on_message(filters.reply)
 async def add_countdown_information(client, message):

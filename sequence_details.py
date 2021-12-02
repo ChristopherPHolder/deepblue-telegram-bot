@@ -52,9 +52,19 @@ create_actions = [
 edit_actions = [
     {
         'action_name': 'select_countdown',
+        'followup_action': 'select_countdown_field',
+        'followup_message': 'What field would you like to edit?'
+    },
+    {
+        'action_name': 'select_countdown_field',
         'followup_action': 'edit_data',
         'followup_message': 'What would you like the new value to be?'
-    }
+    }, 
+    {
+        'action_name': 'edit_data',
+        'followup_action': None,
+        'followup_message': f'Your countdown has been sucessfully updated!'
+    },
 ]
 
 sequence_details = {
