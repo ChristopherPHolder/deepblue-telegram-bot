@@ -36,23 +36,6 @@ sequences = []
         # in depth description of command
         # if -v as arg 2 add examples
 
-## Command /set 'id'
-    # only chat admin
-        # if date in future
-            # create countdown message
-            # pin created message
-            # wait 5 to 8 seconds
-            # if date in future
-                # update message
-                # edit pinned message
-            # else if date in passed
-                # unpin countdown message
-                # create launch message
-                # send launch message
-                # pin launch message
-        # else if date not in past
-            # send private error message
-    # if not admin, log event
 
 async def update_countdown_data(countdown_id, field_name, field_data):
     global countdowns
@@ -116,7 +99,6 @@ async def create_display_countdown_fields(sequence):
         ['countdown_message', 'countdown_link'],
         ['countdowns_image', 'countdown_image_caption']
     ]
-
     return display_fields
 
 async def edit_sequence_manager(sequence, message):
@@ -164,10 +146,39 @@ async def edit_sequence_manager(sequence, message):
                 input_type = 'date_time'
             elif field_name == 'countdown_image':
                 input_type
+
             field_data = await extract_field_data(input_type, message)
             await update_countdown_data(countdown_id, field_name, field_data)
             remove_sequence_from_sequences(sequence)
             await app.send_message(message.chat.id, action['followup_message'])
+
+async def set_sequence_manager(sequence, message):
+    for action in sequence_details['set_actions']:
+        if sequence['action'] == action['action_name']\
+        and sequence['action'] == 'select_countdown':
+            selected_countdown = message.text
+            # Update countdown
+            # Set countdown
+            # Remove sequence
+            # Maintain timer updated
+
+@app.on_message(filters.command('set'))
+async def set_countdown(client, message):
+    global sequences, countdowns
+    display_countdowns = create_display_countdown_lists()
+    sequences.append(set_sequence_disct(message))
+
+    try:
+        return await message.reply(
+            'Which countdown would you like to watch?',
+            reply_markup=ReplyKeyboardMarkup(
+                display_countdowns,
+                one_time_keyboard=True
+            )
+        )
+
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
 
 @app.on_message(filters.command('list'))
 async def list_countdowns(client, message):
@@ -186,6 +197,8 @@ async def add_countdown_information(client, message):
                     return await create_sequence_manager(sequence, message)
                 elif sequence['sequence'] == 'edit_countdown':
                     return await edit_sequence_manager(sequence, message)
+                elif sequence['sequence'] == 'set_countdown':
+                    return await set_sequence_manager(sequence, message)
 
     except FloodWait as e:
         await asyncio.sleep(e.x)
@@ -219,6 +232,15 @@ def edit_sequence_dict(message):
         }
     return sequence
 
+def set_sequence_disct(message):
+    sequence = {
+        'sequence': 'set_countdown',
+        'sequence_id': uuid4(), 
+        'user_id': message.from_user.id,
+        'action': 'select_countdown',
+        'status': 'response_pending'
+    }
+
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
     global countdowns, sequences
@@ -251,7 +273,7 @@ async def edit_countdown(client, message):
             'Which countdown do you want to edit?',
             reply_markup=ReplyKeyboardMarkup(
                 display_countdown,
-                resize_keyboard=True
+                one_time_keyboard=True
             )
         )
     except FloodWait as e:
