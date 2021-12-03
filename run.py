@@ -13,7 +13,8 @@ CallbackQuery, ReplyKeyboardMarkup, ForceReply, ReplyKeyboardRemove
 from callback_messages import HELP_TEXT
 from user_input_extractor import convert_input_to_datetime
 from sequence_details import sequence_details
-
+from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
+    set_sequence_dict
 #logging.basicConfig(filename='run.log', level=logging.DEBUG,
 #                    format='%(asctime)s:%(levelname)s:%(message)s')
 
@@ -166,7 +167,7 @@ async def set_sequence_manager(sequence, message):
 async def set_countdown(client, message):
     global sequences, countdowns
     display_countdowns = create_display_countdown_lists()
-    sequences.append(set_sequence_disct(message))
+    sequences.append(set_sequence_dict(message))
 
     try:
         return await message.reply(
@@ -210,36 +211,6 @@ def create_countdown_dict(countdown_id, message):
         'countdown_onwner_username': message.from_user.username,
         }
     return countdown
-
-def create_sequence_dict( countdown_id, message):
-    sequence = {
-        'sequence': 'create_countdown', 
-        'action': 'add_name',
-        'sequence_id': uuid4(), 
-        'user_id': message.from_user.id,
-        'countdown_id': countdown_id, 
-        'status': 'response_pending',
-        }
-    return sequence
-
-def edit_sequence_dict(message):
-    sequence = {
-        'sequence': 'edit_countdown',
-        'sequence_id': uuid4(), 
-        'user_id': message.from_user.id,
-        'action': 'select_countdown',
-        'status': 'response_pending',
-        }
-    return sequence
-
-def set_sequence_disct(message):
-    sequence = {
-        'sequence': 'set_countdown',
-        'sequence_id': uuid4(), 
-        'user_id': message.from_user.id,
-        'action': 'select_countdown',
-        'status': 'response_pending'
-    }
 
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
