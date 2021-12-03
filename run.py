@@ -64,7 +64,10 @@ async def extract_field_data(input_type, message):
     if input_type == 'text':
         return message.text
     if input_type == 'date_time':
-        return convert_input_to_datetime(message.text)
+        try:
+            return convert_input_to_datetime(message.text)
+        except AttributeError as e:
+            return convert_input_to_datetime(message)
     elif input_type == 'image':
         try:
             return await app.download_media(message)
@@ -253,6 +256,32 @@ async def edit_countdown(client, message):
         )
     except FloodWait as e:
         await asyncio.sleep(e.x)
+
+
+@app.on_message(filters.command('add'))
+async def add_countdown_timer_to_list(client, message):
+    global countdowns
+    date_time = await extract_field_data('date_time', message.command[3])
+    image = await extract_field_data('image', message)
+    try:
+        countdown = {
+            'countdown_id': str(uuid4())[:8],
+            'countdown_owner_id': message.from_user.id,
+            'countdown_onwner_username': message.from_user.username,
+            'countdown_name': str(message.command[1]),
+            'countdown_message': str(message.command[2]),
+            'countdown_date': date_time,
+            'countdown_link': str(message.command[4]),
+            'countdown_image': image,
+            'countdown_image_caption': str(message.command[5]),
+            'state': 'pending'
+            }
+
+        countdowns.append(countdown)
+
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
+
 
 ## Command /preview id
     # only in admin chat
