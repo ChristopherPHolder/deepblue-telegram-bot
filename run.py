@@ -1,6 +1,6 @@
 import os
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 import random
 from uuid import uuid4
 import logging
@@ -8,13 +8,14 @@ import logging
 from pyrogram import Client, filters
 from pyrogram.errors import MessageNotModified, FloodWait
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup,\
-CallbackQuery, ReplyKeyboardMarkup, ForceReply, ReplyKeyboardRemove
+CallbackQuery, ReplyKeyboardMarkup, ForceReply
 
 from callback_messages import HELP_TEXT
 from user_input_extractor import convert_input_to_datetime
 from sequence_details import sequence_details
 from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
     set_sequence_dict
+
 #logging.basicConfig(filename='run.log', level=logging.DEBUG,
 #                    format='%(asctime)s:%(levelname)s:%(message)s')
 
@@ -153,15 +154,83 @@ async def edit_sequence_manager(sequence, message):
             remove_sequence_from_sequences(sequence)
             await app.send_message(message.chat.id, action['followup_message'])
 
+async def get_selected_countdown(selected_countdown):
+    global countdowns
+    countdown_name = selected_countdown
+    for countdown in countdowns:
+        if countdown_name == countdown['countdown_name']:
+            return countdown
+
+async def add_countdown_activation_info(countdown, message):
+    global countdowns
+    if countdown['state'] != 'active':
+        countdown.update({'state': 'active'})
+
+def get_formated_countdown(countdown):
+    time_remaining = str(
+        countdown["countdown_date"] - datetime.now(timezone.utc)
+        ).split('.')[0]
+
+    formated_countdown = (
+        f'{countdown["countdown_message"]}\n\n'+\
+        f'{time_remaining}\n\n'+\
+        f'{countdown["countdown_link"]}'
+    )
+    return formated_countdown
+
+def check_countdown_completed(countdown):
+    countdown_date = countdown["countdown_date"]
+    if (countdown_date < datetime.now(timezone.utc)):
+        return True
+    else:
+        return False
+
+async def handle_countdown_ending(countdown, countdown_message):
+    countdown_message.delete()
+    countdown.update({'state': 'completed'})
+    end_message = await app.send_photo(
+        countdown_message.chat.id,
+        countdown['countdown_image'],
+        caption=countdown['countdown_image_caption']
+        )
+    return await end_message.pin()
+
+
+async def maintain_countdown_message(countdown, countdown_message):
+    while countdown['state'] == 'active':
+        updated_message = get_formated_countdown(countdown)
+        countdown_complete = check_countdown_completed(countdown)
+        if countdown_message.text != updated_message \
+        and countdown_complete == False:
+            await countdown_message.edit(updated_message)
+            await asyncio.sleep(random.randint(4, 8))
+        elif countdown_complete == True:
+            return handle_countdown_ending(countdown, countdown_message)
+            
+
+
+async def set_maintain_countdown_message(countdown, message):
+    global countdowns
+    try:
+        countdown_message = await app.send_message(
+            message.chat.id, get_formated_countdown(countdown)
+            )
+        await countdown_message.pin()
+        await asyncio.sleep(random.randint(4, 8))
+        await maintain_countdown_message(countdown, countdown_message)
+        
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
+    
 async def set_sequence_manager(sequence, message):
     for action in sequence_details['set_actions']:
         if sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown':
             selected_countdown = message.text
-            # Update countdown
-            # Set countdown
-            # Remove sequence
-            # Maintain timer updated
+            countdown = await get_selected_countdown(selected_countdown)
+            await add_countdown_activation_info(countdown, message)
+            await set_maintain_countdown_message(countdown, message)
+            remove_sequence_from_sequences(sequence)
 
 @app.on_message(filters.command('set'))
 async def set_countdown(client, message):
@@ -258,7 +327,7 @@ async def add_countdown_timer_to_list(client, message):
     image = await extract_field_data('image', message)
     try:
         countdown = {
-            'countdown_id': str(uuid4())[:8],
+            'countdown_id': uuid4(),
             'countdown_owner_id': message.from_user.id,
             'countdown_onwner_username': message.from_user.username,
             'countdown_name': str(message.command[1]),
@@ -269,12 +338,10 @@ async def add_countdown_timer_to_list(client, message):
             'countdown_image_caption': str(message.command[5]),
             'state': 'pending'
             }
-
         countdowns.append(countdown)
 
     except FloodWait as e:
         await asyncio.sleep(e.x)
-
 
 ## Command /preview id
     # only in admin chat
@@ -282,8 +349,14 @@ async def add_countdown_timer_to_list(client, message):
 ## Command /stop
     # only countdown owners
 
-## Command 'kill'
-    # only super user
+@app.on_message(filters.command('kill'))
+async def exit_application(client, message):
+    try:
+        await message.reply('🛑 I am being terminated good bye my friends.')
+        print('Terminating Countdown')
+        exit()
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
 
 print("Telegram bot is up and running!")
 app.run()
