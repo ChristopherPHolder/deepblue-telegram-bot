@@ -15,7 +15,8 @@ from user_input_extractor import convert_input_to_datetime
 from sequence_details import sequence_details
 from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
     set_sequence_dict
-
+from countdown_dictionaries import create_countdown_dict,\
+    create_complete_countdown_dict
 #logging.basicConfig(filename='run.log', level=logging.DEBUG,
 #                    format='%(asctime)s:%(levelname)s:%(message)s')
 
@@ -31,13 +32,11 @@ app = Client(
 countdowns = []
 sequences = []
 
-
 ## command '/help 'command'(optional) 'verbose'(optional)
     ## if no args then list commands and small descriptions
     ## if 1 arg and arg is in list of commads
         # in depth description of command
         # if -v as arg 2 add examples
-
 
 async def update_countdown_data(countdown_id, field_name, field_data):
     global countdowns
@@ -206,8 +205,6 @@ async def maintain_countdown_message(countdown, countdown_message):
             await asyncio.sleep(random.randint(4, 8))
         elif countdown_complete == True:
             return handle_countdown_ending(countdown, countdown_message)
-            
-
 
 async def set_maintain_countdown_message(countdown, message):
     global countdowns
@@ -218,7 +215,7 @@ async def set_maintain_countdown_message(countdown, message):
         await countdown_message.pin()
         await asyncio.sleep(random.randint(4, 8))
         await maintain_countdown_message(countdown, countdown_message)
-        
+
     except FloodWait as e:
         await asyncio.sleep(e.x)
     
@@ -242,8 +239,7 @@ async def set_countdown(client, message):
         return await message.reply(
             'Which countdown would you like to watch?',
             reply_markup=ReplyKeyboardMarkup(
-                display_countdowns,
-                one_time_keyboard=True
+                display_countdowns, one_time_keyboard=True
             )
         )
 
@@ -273,13 +269,6 @@ async def add_countdown_information(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-def create_countdown_dict(countdown_id, message):
-    countdown = {
-        'countdown_id': countdown_id, 
-        'countdown_owner_id': message.from_user.id,
-        'countdown_onwner_username': message.from_user.username,
-        }
-    return countdown
 
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
@@ -287,7 +276,6 @@ async def create_countdown(client, message):
     countdown_id = uuid4()
     countdowns.append(create_countdown_dict(countdown_id, message))
     sequences.append(create_sequence_dict(countdown_id, message))
-
     try:
         await message.reply(
             'What do you want to name the countdown?', 
@@ -312,8 +300,7 @@ async def edit_countdown(client, message):
         await message.reply(
             'Which countdown do you want to edit?',
             reply_markup=ReplyKeyboardMarkup(
-                display_countdown,
-                one_time_keyboard=True
+                display_countdown, one_time_keyboard=True
             )
         )
     except FloodWait as e:
@@ -325,21 +312,12 @@ async def add_countdown_timer_to_list(client, message):
     global countdowns
     date_time = await extract_field_data('date_time', message.command[3])
     image = await extract_field_data('image', message)
+    countdown = create_complete_countdown_dict(message, date_time, image)
     try:
-        countdown = {
-            'countdown_id': uuid4(),
-            'countdown_owner_id': message.from_user.id,
-            'countdown_onwner_username': message.from_user.username,
-            'countdown_name': str(message.command[1]),
-            'countdown_message': str(message.command[2]),
-            'countdown_date': date_time,
-            'countdown_link': str(message.command[4]),
-            'countdown_image': image,
-            'countdown_image_caption': str(message.command[5]),
-            'state': 'pending'
-            }
         countdowns.append(countdown)
-
+        app.send_message(message.chat.id, 
+            'Countdown was sucessfully created.'
+        )
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
