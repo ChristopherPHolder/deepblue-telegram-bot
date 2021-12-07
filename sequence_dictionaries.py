@@ -20,7 +20,7 @@ def edit_sequence_dict(message):
         }
     return sequence
 
-def create_sequence_dict( countdown_id, message):
+def create_sequence_dict(countdown_id, message):
     sequence = {
         'sequence': 'create_countdown', 
         'action': 'add_name',
@@ -29,4 +29,14 @@ def create_sequence_dict( countdown_id, message):
         'countdown_id': countdown_id, 
         'status': 'response_pending',
         }
+    return sequence
+
+def stop_sequence_dict(message):
+    sequence = {
+        'sequence': 'stop_countdown',
+        'sequence_id': uuid4(),
+        'user_id': message.from_user.id,
+        'action': 'select_countdown',
+        'status': 'response_pending'
+    }
     return sequence
