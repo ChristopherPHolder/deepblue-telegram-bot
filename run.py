@@ -392,6 +392,7 @@ async def exit_application(client, message):
         exit()
     except FloodWait as e:
         await asyncio.sleep(e.x)
-
-print("Telegram bot is up and running!")
-app.run()
+        
+if __name__ == '__main__':
+    print("Telegram bot is up and running!")
+    app.run()
