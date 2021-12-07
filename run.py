@@ -100,57 +100,73 @@ async def create_display_countdown_fields(sequence):
         ['countdowns_image', 'countdown_image_caption']
     ]
     return display_fields
+    
+def get_text_fields():
+    text_fields = [
+        'countdown_name', 'countdown_message',
+        'countdown_link', 'countdown_caption',
+    ]
+    return text_fields
+
+def get_field_input_type(field_name):
+    text_fields = get_text_fields()
+    if field_name in text_fields:
+        input_type = 'text'
+    elif field_name == 'countdown_date':
+        input_type = 'date_time'
+    elif field_name == 'countdown_image':
+        input_type = 'image'
+    return input_type
+
+async def handle_select_sequence_countdown(sequence, action, message):
+    await add_countdown_to_sequence(sequence, message)
+    countdown_fields = await create_display_countdown_fields(sequence)
+    sequence.update({'action': action['followup_action']})
+    try:
+        return await app.send_message(
+            message.chat.id, action['followup_message'],
+            reply_markup=ReplyKeyboardMarkup(
+                countdown_fields, one_time_keyboard=True
+                )
+            )
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
+
+async def handle_select_edit_field(sequence, action, message):
+    field_name = message.text
+    sequence.update({'edit_field': field_name})
+    sequence.update({'action': action['followup_action']})
+    try:
+        return await app.send_message(
+            message.chat.id, action['followup_message'],
+            reply_markup=(ForceReply())
+        )
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
+
+async def handle_edit_field_data(sequence, action, message):
+    field_name = sequence['edit_field']
+    countdown_id = sequence['countdown_id']
+    input_type = get_field_input_type(field_name)
+    field_data = await extract_field_data(input_type, message)
+    await update_countdown_data(countdown_id, field_name, field_data)
+    remove_sequence_from_sequences(sequence)
+    try:
+        await app.send_message(message.chat.id, action['followup_message'])
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
 
 async def edit_sequence_manager(sequence, message):
     for action in sequence_details['edit_actions']:
         if sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown':
-            await add_countdown_to_sequence(sequence, message)
-            countdown_fields = await create_display_countdown_fields(sequence)
-            sequence.update({'action': action['followup_action']})
-            return await app.send_message(
-                message.chat.id,
-                action['followup_message'],
-                reply_markup=ReplyKeyboardMarkup(
-                    countdown_fields,
-                    one_time_keyboard=True
-                )
-            )
-
+            await handle_select_sequence_countdown(sequence, action, message)
         elif sequence['action'] == action['action_name']\
-            and sequence['action'] == 'select_countdown_field':
-            field_name = message.text
-            sequence.update({'edit_field': field_name})
-            sequence.update({'action': action['followup_action']})
-            return await app.send_message(
-                message.chat.id,
-                action['followup_message'],
-                reply_markup=(
-                    ForceReply()
-                )
-            )
-
+        and sequence['action'] == 'select_countdown_field':
+            await handle_select_edit_field(sequence, action, message)
         elif sequence['action'] == action['action_name']\
-            and sequence['action'] == 'edit_data':
-            text_fields = [
-                'countdown_name', 'countdown_message',
-                'countdown_link', 'countdown_caption',
-            ]
-
-            field_name = sequence['edit_field']
-            countdown_id = sequence['countdown_id']
-
-            if field_name in text_fields:
-                input_type = 'text'
-            elif field_name == 'countdown_date':
-                input_type = 'date_time'
-            elif field_name == 'countdown_image':
-                input_type
-
-            field_data = await extract_field_data(input_type, message)
-            await update_countdown_data(countdown_id, field_name, field_data)
-            remove_sequence_from_sequences(sequence)
-            await app.send_message(message.chat.id, action['followup_message'])
+        and sequence['action'] == 'edit_data':
+            await handle_edit_field_data(sequence, action, message)
 
 async def get_selected_countdown(selected_countdown):
     global countdowns
@@ -169,20 +185,13 @@ async def add_countdown_activation_info(countdown, message):
 
 async def add_countdown_deactivation_info(countdown, message):
     global countdowns
-    print('Testing stop')
     if countdown['state'] != 'stoped':
         countdown.update({'state': 'stoped'})
-        print(countdown['state'])
-        print(countdowns)
-        return True
-    else:
-        return False
 
 def get_formated_countdown(countdown):
     time_remaining = str(
         countdown["countdown_date"] - datetime.now(timezone.utc)
         ).split('.')[0]
-
     formated_countdown = (
         f'{countdown["countdown_message"]}\n\n'+\
         f'{time_remaining}\n\n'+\
@@ -253,8 +262,6 @@ async def stop_sequence_manager(sequence, message):
             countdown = await get_selected_countdown(selected_countdown)
             await add_countdown_deactivation_info(countdown, message) 
             remove_sequence_from_sequences(sequence)
-            return True
-    return False
 
 @app.on_message(filters.command('set'))
 async def set_countdown(client, message):
@@ -282,25 +289,19 @@ async def list_countdowns(client, message):
     global countdowns
     await message.reply(countdowns)
 
-
 @app.on_message(filters.reply)
 async def add_countdown_information(client, message):
-    global sequences
-    try:
-        user_id = message.from_user.id
-        for sequence in sequences:
-            if user_id == sequence['user_id']:
-                if sequence['sequence'] == 'create_countdown':
-                    return await create_sequence_manager(sequence, message)
-                elif sequence['sequence'] == 'edit_countdown':
-                    return await edit_sequence_manager(sequence, message)
-                elif sequence['sequence'] == 'set_countdown':
-                    return await set_sequence_manager(sequence, message)
-                elif sequence['sequence'] == 'stop_countdown':
-                    return await stop_sequence_manager(sequence, message)
-    except FloodWait as e:
-        await asyncio.sleep(e.x)
-
+    user_id = message.from_user.id
+    for sequence in sequences:
+        if user_id == sequence['user_id']:
+            if sequence['sequence'] == 'create_countdown':
+                return await create_sequence_manager(sequence, message)
+            elif sequence['sequence'] == 'edit_countdown':
+                return await edit_sequence_manager(sequence, message)
+            elif sequence['sequence'] == 'set_countdown':
+                return await set_sequence_manager(sequence, message)
+            elif sequence['sequence'] == 'stop_countdown':
+                return await stop_sequence_manager(sequence, message)
 
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
@@ -392,7 +393,7 @@ async def exit_application(client, message):
         exit()
     except FloodWait as e:
         await asyncio.sleep(e.x)
-        
+
 if __name__ == '__main__':
     print("Telegram bot is up and running!")
     app.run()
