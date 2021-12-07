@@ -287,7 +287,14 @@ async def set_countdown(client, message):
 @app.on_message(filters.command('list'))
 async def list_countdowns(client, message):
     global countdowns
-    await message.reply(countdowns)
+    countdown_list_message = 'List of countdowns:\n'
+    for count, countdown in enumerate(countdowns):
+        countdown_item = f"{str(count)}- {countdown['countdown_name']}\n"
+        countdown_list_message += countdown_item
+    try:
+        await message.reply(countdown_list_message)
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
 
 @app.on_message(filters.reply)
 async def add_countdown_information(client, message):
@@ -365,7 +372,16 @@ async def add_countdown_timer_to_list(client, message):
         await asyncio.sleep(e.x)
 
 ## Command /preview
-          
+
+@app.on_message(filters.command('clear'))
+async def clear_sequences(client, message):
+    global sequences
+    sequences = []
+    try:
+        message.reply('All sequences have been cleared!')
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
+
 @app.on_message(filters.command('stop'))
 async def stop_running_countdown(client, message):
     active_countdowns = create_display_active_countdowns() 
