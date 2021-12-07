@@ -14,7 +14,7 @@ from callback_messages import HELP_TEXT
 from user_input_extractor import convert_input_to_datetime
 from sequence_details import sequence_details
 from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
-    set_sequence_dict, stop_sequence_dict
+    set_sequence_dict, stop_sequence_dict, preview_sequence_dict
 from countdown_dictionaries import create_countdown_dict,\
     create_complete_countdown_dict
 #logging.basicConfig(filename='run.log', level=logging.DEBUG,
@@ -238,9 +238,28 @@ async def set_maintain_countdown_message(countdown, message):
         await countdown_message.pin()
         await asyncio.sleep(random.randint(4, 8))
         await maintain_countdown_message(countdown, countdown_message)
-
     except FloodWait as e:
         await asyncio.sleep(e.x)
+
+async def preview_sequence_manager(sequence, message):
+    for action in sequence_details['set_actions']:
+        if sequence['action'] == action['action_name']\
+        and sequence['action'] == 'select_countdown':
+            selected_countdown = message.text
+            remove_sequence_from_sequences(sequence)
+            countdown = await get_selected_countdown(selected_countdown)
+            try:
+                await app.send_message(
+                    message.chat.id, get_formated_countdown(countdown)
+                )
+                await asyncio.sleep(1)
+                await app.send_photo(
+                    message.chat.id, countdown['countdown_image'],
+                    caption=countdown['countdown_image_caption']
+                )
+            except FloodWait as e:
+                await asyncio.sleep(e.x)
+
     
 async def set_sequence_manager(sequence, message):
     global countdowns
@@ -267,11 +286,11 @@ async def stop_sequence_manager(sequence, message):
 async def set_countdown(client, message):
     global sequences, countdowns
     display_countdowns = create_display_countdown_lists()
-    sequences.append(set_sequence_dict(message))
     try:
         if len(display_countdowns) != 0:
+            sequences.append(set_sequence_dict(message))
             return await message.reply(
-                'Which countdown would you like to watch?',
+                'Which countdown would you like to set?',
                 reply_markup=ReplyKeyboardMarkup(
                     display_countdowns, one_time_keyboard=True
                 )
@@ -280,7 +299,6 @@ async def set_countdown(client, message):
             return await message.reply(
                 'Sorry there are currently no countdowns'
                 )
-
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
@@ -309,6 +327,8 @@ async def add_countdown_information(client, message):
                 return await set_sequence_manager(sequence, message)
             elif sequence['sequence'] == 'stop_countdown':
                 return await stop_sequence_manager(sequence, message)
+            elif sequence['sequence'] == 'preview_countdown':
+                return await preview_sequence_manager(sequence, message)
 
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
@@ -371,7 +391,25 @@ async def add_countdown_timer_to_list(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-## Command /preview
+@app.on_message(filters.command('preview'))
+async def preview_coundown_messages(client, message):
+    if len(countdowns) == 0:
+        try:
+            message.reply('Sorry, there are no countdowns to preview.')
+        except FloodWait as e:
+            await asyncio.sleep(e.x)
+    else:
+        display_countdowns = create_display_countdown_lists()
+        sequences.append(preview_sequence_dict(message))
+        try:
+            await message.reply(
+                'Which countdown would you like to set?',
+                reply_markup=ReplyKeyboardMarkup(
+                    display_countdowns, one_time_keyboard=True
+                )
+            )
+        except FloodWait as e:
+            await asyncio.sleep(e.x)
 
 @app.on_message(filters.command('clear'))
 async def clear_sequences(client, message):
@@ -405,7 +443,7 @@ async def stop_running_countdown(client, message):
 async def exit_application(client, message):
     try:
         await message.reply('🛑 I am being terminated good bye my friends.')
-        print('Terminating Countdown')
+        print('Terminating Countdown Telegram Bot')
         exit()
     except FloodWait as e:
         await asyncio.sleep(e.x)

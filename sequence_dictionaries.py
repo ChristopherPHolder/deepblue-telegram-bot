@@ -9,6 +9,16 @@ def set_sequence_dict(message):
         'status': 'response_pending'
     }
     return sequence
+    
+def preview_sequence_dict(message):
+    sequence = {
+        'sequence': 'preview_countdown',
+        'sequence_id': uuid4(),
+        'user_id': message.from_user.id,
+        'action': 'select_countdown',
+        'status': 'response_pending'
+    }
+    return sequence
 
 def edit_sequence_dict(message):
     sequence = {
