@@ -6,7 +6,8 @@ from uuid import uuid4
 
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
-from pyrogram.types import ReplyKeyboardMarkup, ForceReply
+from pyrogram.types import ReplyKeyboardMarkup, ForceReply,\
+    InlineKeyboardMarkup
 
 from user_input_extractor import convert_input_to_datetime
 from sequence_details import sequence_details
@@ -82,29 +83,26 @@ async def add_countdown_to_sequence(sequence, message):
     for countdown in countdowns:
         if message.text == countdown['countdown_name']:
             sequence.update({'countdown_id': countdown['countdown_id']})
-            
+
+# TODO remove async and sequence 
 async def create_display_countdown_fields(sequence):
     display_fields = [
         ['countdown_name', 'countdown_date'],
-        ['countdown_message', 'countdown_link'],
-        ['countdowns_image', 'countdown_image_caption']
+        ['countdowns_image', 'countdown_caption'],
+        ['countdowns_end_image', 'countdown_end_caption']
     ]
     return display_fields
     
 def get_text_fields():
-    text_fields = [
-        'countdown_name', 'countdown_message',
-        'countdown_link', 'countdown_caption',
-    ]
-    return text_fields
+    return ['countdown_name','countdown_caption','countdown_end_caption']
+    
 
 def get_field_input_type(field_name):
-    text_fields = get_text_fields()
-    if field_name in text_fields:
+    if field_name in get_text_fields():
         input_type = 'text'
     elif field_name == 'countdown_date':
         input_type = 'date_time'
-    elif field_name == 'countdown_image':
+    elif field_name == ('countdown_image' or 'countdown_end_image'):
         input_type = 'image'
     return input_type
 
@@ -116,7 +114,9 @@ async def handle_select_sequence_countdown(sequence, action, message):
         return await app.send_message(
             message.chat.id, action['followup_message'],
             reply_markup=ReplyKeyboardMarkup(
-                countdown_fields, one_time_keyboard=True
+                countdown_fields, 
+                one_time_keyboard=True,
+                selective=True
                 )
             )
     except FloodWait as e:
@@ -178,14 +178,13 @@ async def add_countdown_deactivation_info(countdown, message):
     if countdown['state'] != 'stoped':
         countdown.update({'state': 'stoped'})
 
-def get_formated_countdown(countdown):
+# format is caption now
+def get_updated_caption(countdown):
     time_remaining = str(
         countdown["countdown_date"] - datetime.now(timezone.utc)
         ).split('.')[0]
     formated_countdown = (
-        f'{countdown["countdown_message"]}\n\n'+\
-        f'{time_remaining}\n\n'+\
-        f'{countdown["countdown_link"]}'
+        f'{countdown["countdown_caption"]}\n\n{time_remaining}'
     )
     return formated_countdown
 
@@ -202,19 +201,24 @@ async def handle_countdown_ending(countdown, countdown_message):
     countdown.update({'state': 'completed'})
     end_message = await app.send_photo(
         countdown_message.chat.id,
-        countdown['countdown_image'],
-        caption=countdown['countdown_image_caption']
+        countdown['countdown_end_image'],
+        caption=countdown['countdown_end_caption']
         )
     return await end_message.pin()
 
 async def maintain_countdown_message(countdown, countdown_message):
     global countdowns
     while countdown['state'] == 'active':
-        updated_message = get_formated_countdown(countdown)
+        updated_caption = get_updated_caption(countdown)
         countdown_complete = check_countdown_completed(countdown)
-        if countdown_message.text != updated_message \
+        # message.text might be .caption
+        if countdown_message.text != updated_caption \
         and countdown_complete == False:
-            await countdown_message.edit(updated_message)
+            await app.edit_message_caption(
+                countdown_message.chat.id, 
+                countdown_message.message_id, 
+                updated_caption
+            )
             await asyncio.sleep(random.randint(4, 8))
         elif countdown_complete == True:
             return await handle_countdown_ending(countdown, countdown_message)
@@ -222,8 +226,10 @@ async def maintain_countdown_message(countdown, countdown_message):
 async def set_maintain_countdown_message(countdown, message):
     global countdowns
     try:
-        countdown_message = await app.send_message(
-            message.chat.id, get_formated_countdown(countdown)
+        countdown_message = await app.send_photo(
+            message.chat.id,
+            countdown['countdown_image'],
+            caption=get_updated_caption(countdown)
             )
         await countdown_message.pin()
         await asyncio.sleep(random.randint(4, 8))
@@ -239,13 +245,15 @@ async def preview_sequence_manager(sequence, message):
             remove_sequence_from_sequences(sequence)
             countdown = await get_selected_countdown(selected_countdown)
             try:
-                await app.send_message(
-                    message.chat.id, get_formated_countdown(countdown)
+                await app.send_photo(
+                    message.chat.id,
+                    countdown['countdown_image'],
+                    caption=get_updated_caption(countdown)
                 )
                 await asyncio.sleep(1)
                 await app.send_photo(
-                    message.chat.id, countdown['countdown_image'],
-                    caption=countdown['countdown_image_caption']
+                    message.chat.id, countdown['countdown_end_image'],
+                    caption=countdown['countdown_end_caption']
                 )
             except FloodWait as e:
                 await asyncio.sleep(e.x)
@@ -291,7 +299,9 @@ async def set_countdown(client, message):
             return await message.reply(
                 'Which countdown would you like to set?',
                 reply_markup=ReplyKeyboardMarkup(
-                    display_countdowns, one_time_keyboard=True
+                    display_countdowns, 
+                    one_time_keyboard=True,
+                    selective=True
                 )
             )
         elif len(display_countdowns) == 0:
@@ -394,7 +404,9 @@ async def edit_countdown(client, message):
         await message.reply(
             'Which countdown do you want to edit?',
             reply_markup=ReplyKeyboardMarkup(
-                display_countdown, one_time_keyboard=True
+                display_countdown, 
+                one_time_keyboard=True,
+                selective=True
             )
         )
     except FloodWait as e:
@@ -419,7 +431,7 @@ async def add_countdown_timer_to_list(client, message):
 async def preview_coundown_messages(client, message):
     if len(countdowns) == 0:
         try:
-            message.reply('Sorry, there are no countdowns to preview.')
+            await message.reply('Sorry, there are no countdowns to preview.')
         except FloodWait as e:
             await asyncio.sleep(e.x)
     else:
@@ -427,9 +439,11 @@ async def preview_coundown_messages(client, message):
         sequences.append(preview_sequence_dict(message))
         try:
             await message.reply(
-                'Which countdown would you like to set?',
+                'Which countdown would you like to preview?',
                 reply_markup=ReplyKeyboardMarkup(
-                    display_countdowns, one_time_keyboard=True
+                    display_countdowns, 
+                    one_time_keyboard=True,
+                    selective=True
                 )
             )
         except FloodWait as e:
@@ -457,7 +471,9 @@ async def delete_countdown(client, message):
         await message.reply(
             'Which countdown would you like to set?',
             reply_markup=ReplyKeyboardMarkup(
-                display_countdowns, one_time_keyboard=True
+                display_countdowns, 
+                one_time_keyboard=True,
+                selective=True
             )
         )
  
@@ -471,7 +487,9 @@ async def stop_running_countdown(client, message):
             await message.reply(
                 'Which countdown do you want to edit?',
                 reply_markup=ReplyKeyboardMarkup(
-                    active_countdowns, one_time_keyboard=True
+                    active_countdowns, 
+                    one_time_keyboard=True,
+                    selective=True
                 )
             )
         elif active_countdowns == None:
