@@ -3,24 +3,19 @@ import asyncio
 from datetime import datetime, timezone
 import random
 from uuid import uuid4
-import logging
 
 from pyrogram import Client, filters
-from pyrogram.errors import MessageNotModified, FloodWait
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup,\
-CallbackQuery, ReplyKeyboardMarkup, ForceReply
+from pyrogram.errors import FloodWait
+from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 
-from callback_messages import HELP_TEXT
 from user_input_extractor import convert_input_to_datetime
 from sequence_details import sequence_details
 from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
     set_sequence_dict, stop_sequence_dict, preview_sequence_dict
 from countdown_dictionaries import create_countdown_dict,\
     create_complete_countdown_dict
-#logging.basicConfig(filename='run.log', level=logging.DEBUG,
-#                    format='%(asctime)s:%(levelname)s:%(message)s')
 
-app_name = 'DeepBlue_Telegram_Bot'
+app_name = os.environ['APP_NAME']
 api_id = int(os.environ['API_ID'])
 api_hash = os.environ['API_HASH']
 bot_token = os.environ['BOT_TOKEN']
@@ -31,12 +26,6 @@ app = Client(
 
 countdowns = []
 sequences = []
-
-## command '/help 'command'(optional) 'verbose'(optional)
-    ## if no args then list commands and small descriptions
-    ## if 1 arg and arg is in list of commads
-        # in depth description of command
-        # if -v as arg 2 add examples
 
 async def update_countdown_data(countdown_id, field_name, field_data):
     global countdowns
