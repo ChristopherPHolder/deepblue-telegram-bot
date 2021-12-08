@@ -378,7 +378,6 @@ async def help_message(client, message):
         f'We tried to make the bot as intuitive as possible.\n\n'+\
         f'Some commands you might be interested in are:\n'+\
         f'/create to create a countdown\n' +\
-        f'/add a faster way to create a countdown\n' +\
         f'/preview so preview the countdown messages\n' +\
         f'/set to activate a countdown in the current chat\n' +\
         f'/edit to edit the information of a countdown\n' +\
