@@ -11,7 +11,8 @@ from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 from user_input_extractor import convert_input_to_datetime
 from sequence_details import sequence_details
 from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
-    set_sequence_dict, stop_sequence_dict, preview_sequence_dict
+    set_sequence_dict, stop_sequence_dict, preview_sequence_dict,\
+    delete_sequence_dict
 from countdown_dictionaries import create_countdown_dict,\
     create_complete_countdown_dict
 
@@ -249,7 +250,16 @@ async def preview_sequence_manager(sequence, message):
             except FloodWait as e:
                 await asyncio.sleep(e.x)
 
-    
+async def delete_sequence_manager(sequence, message):
+    global countdowns
+    for action in sequence_details['set_actions']:
+        if sequence['action'] == action['action_name']\
+        and sequence['action'] == 'select_countdown':
+            selected_countdown = message.text
+            remove_sequence_from_sequences(sequence)
+            countdown = await get_selected_countdown(selected_countdown)
+            countdowns.remove(countdown)
+
 async def set_sequence_manager(sequence, message):
     global countdowns
     for action in sequence_details['set_actions']:
@@ -318,6 +328,8 @@ async def add_countdown_information(client, message):
                 return await stop_sequence_manager(sequence, message)
             elif sequence['sequence'] == 'preview_countdown':
                 return await preview_sequence_manager(sequence, message)
+            elif sequence['sequence'] == 'delete_countdown':
+                return await delete_sequence_manager(sequence, message)
 
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
@@ -408,6 +420,24 @@ async def clear_sequences(client, message):
         message.reply('All sequences have been cleared!')
     except FloodWait as e:
         await asyncio.sleep(e.x)
+
+@app.on_message(filters.command('delete'))
+async def delete_countdown(client, message):
+    sequences.append(delete_sequence_dict(message))
+    if len(countdowns) == 0:
+        try:
+            await message.reply('Sorry there are no countdowns to delete')
+        except FloodWait as e:
+            await asyncio.sleep(e.x)
+    else:
+        display_countdowns = create_display_countdown_lists()
+        await message.reply(
+            'Which countdown would you like to set?',
+            reply_markup=ReplyKeyboardMarkup(
+                display_countdowns, one_time_keyboard=True
+            )
+        )
+ 
 
 @app.on_message(filters.command('stop'))
 async def stop_running_countdown(client, message):

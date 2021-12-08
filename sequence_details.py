@@ -86,6 +86,13 @@ preview_actions = [
     }
 ]
 
+delete_actions = [
+    {
+        'action_name': 'select_countdown',
+        'followup_action': None
+    }
+]
+
 sequence_details = {
     'create_actions': create_actions,
     'edit_actions': edit_actions,

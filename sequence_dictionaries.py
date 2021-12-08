@@ -50,3 +50,13 @@ def stop_sequence_dict(message):
         'status': 'response_pending'
     }
     return sequence
+
+def delete_sequence_dict(message):
+    sequence = {
+        'sequence': 'delete_countdown',
+        'sequence_id': uuid4(),
+        'user_id': message.from_user.id,
+        'action': 'select_countdown',
+        'status': 'response_pending'
+    }
+    return sequence
