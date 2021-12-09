@@ -1,34 +1,31 @@
 from uuid import uuid4
 
 def set_sequence_dict(message):
-    sequence = {
+    return {
         'sequence': 'set_countdown',
         'sequence_id': uuid4(), 
         'user_id': message.from_user.id,
         'action': 'select_countdown',
         'status': 'response_pending'
     }
-    return sequence
     
 def preview_sequence_dict(message):
-    sequence = {
+    return {
         'sequence': 'preview_countdown',
         'sequence_id': uuid4(),
         'user_id': message.from_user.id,
         'action': 'select_countdown',
         'status': 'response_pending'
     }
-    return sequence
 
 def edit_sequence_dict(message):
-    sequence = {
+    return {
         'sequence': 'edit_countdown',
         'sequence_id': uuid4(), 
         'user_id': message.from_user.id,
         'action': 'select_countdown',
         'status': 'response_pending',
         }
-    return sequence
 
 def create_sequence_dict(countdown_id, message):
     sequence = {
@@ -42,21 +39,19 @@ def create_sequence_dict(countdown_id, message):
     return sequence
 
 def stop_sequence_dict(message):
-    sequence = {
+    return {
         'sequence': 'stop_countdown',
         'sequence_id': uuid4(),
         'user_id': message.from_user.id,
         'action': 'select_countdown',
         'status': 'response_pending'
     }
-    return sequence
 
 def delete_sequence_dict(message):
-    sequence = {
+    return {
         'sequence': 'delete_countdown',
         'sequence_id': uuid4(),
         'user_id': message.from_user.id,
         'action': 'select_countdown',
         'status': 'response_pending'
     }
-    return sequence
