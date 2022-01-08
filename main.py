@@ -16,7 +16,10 @@ from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
 from countdown_dictionaries import create_countdown_dict
 
 from messages import RUN_BOT_MSG, TER_BOT_MSG, NO_ACTIVE_CD_MSG,\
-    NO_CD_TO_DEL, HELP_MSG, CLEARED_SEQ, NO_CD_TO_PRE, NO_CD_TO_SET
+    NO_CD_TO_DEL, HELP_MSG, CLEARED_SEQ, NO_CD_TO_PRE, NO_CD_TO_SET,\
+    ERR_568, ERR_569
+
+from auth import create_admin_user, create_super_user, is_user_super_user
 
 app_name = os.environ['APP_NAME']
 api_id = int(os.environ['API_ID'])
@@ -360,6 +363,27 @@ async def create_countdown(client, message):
             )
     except FloodWait as e:
         await asyncio.sleep(e.x)
+
+@app.on_message(filters.command('create_user'))
+async def create_admin(client, message):
+    if is_user_super_user(message.from_user.id):
+        if len(message.command) != 2:
+            return await message.reply(ERR_568)
+        if message.command[1] == 'admin':
+            user_info = create_admin_user()
+        elif message.command[1] == 'super_user':
+            user_info = create_super_user()
+        user_info_message = (
+                'New User was successfully created\n' +\
+                'User Type: {}\n'+\
+                'User ID: {}\n' +\
+                'Preset Password: TODO \n' +\
+                'To login the new user, please use \n' +\
+                '/login "User ID" "Preset User Password" "New User Password"'
+            ).format(user_info.user_type, user_info.user_id)
+        return await message.reply(user_info_message)
+    else:
+        return await message.reply(ERR_569)
 
 @app.on_message(filters.command('edit'))
 async def edit_countdown(client, message):
