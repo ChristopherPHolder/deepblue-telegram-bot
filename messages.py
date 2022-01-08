@@ -25,3 +25,6 @@ HELP_MSG = (
     )
 
 CLEARED_SEQ = 'All sequences have been cleared!'
+
+ERR_568 = 'You must specify if the user is a super_user or an admin in the command'
+ERR_569 = 'Only Super User Are allowed to use this command.'
