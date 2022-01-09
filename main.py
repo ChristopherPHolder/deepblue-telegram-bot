@@ -8,6 +8,8 @@ from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 
+from permissions import in_admin_group, is_super_user
+
 from user_input_extractor import convert_input_to_datetime
 from sequence_details import sequence_details
 from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
@@ -334,6 +336,7 @@ def create_display_active_countdowns():
 
 @app.on_message(filters.command('help'))
 async def help_message(client, message):
+    if not await in_admin_group(message): return
     try:
         await message.reply(HELP_MSG)
     except FloodWait as e:
@@ -341,18 +344,21 @@ async def help_message(client, message):
 
 @app.on_message(filters.command('list'))
 async def list_countdowns(client, message):
+    if not await in_admin_group(message): return
     global countdowns
+    print(message)
     countdown_list_message = 'List of countdowns:\n'
     for count, countdown in enumerate(countdowns):
         countdown_item = f"{str(count)}- {countdown['countdown_name']}\n"
         countdown_list_message += countdown_item
     try:
-        await message.reply(countdown_list_message)
+        return await message.reply(countdown_list_message)
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
+    if not await in_admin_group(message): return
     global countdowns, sequences
     countdown_id = uuid4()
     countdowns.append(create_countdown_dict(countdown_id, message))
@@ -366,6 +372,7 @@ async def create_countdown(client, message):
 
 @app.on_message(filters.command('edit'))
 async def edit_countdown(client, message):
+    if not await in_admin_group(message): return
     global sequences
     sequences.append(edit_sequence_dict(message))
     try:
@@ -399,6 +406,7 @@ async def preview_coundown_messages(client, message):
 
 @app.on_message(filters.command('clear'))
 async def clear_sequences(client, message):
+    if not await in_admin_group(message): return
     global sequences
     sequences = []
     try:
@@ -408,6 +416,7 @@ async def clear_sequences(client, message):
 
 @app.on_message(filters.command('delete'))
 async def delete_countdown(client, message):
+    if not await in_admin_group(message): return
     sequences.append(delete_sequence_dict(message))
     if len(countdowns) == 0:
         try:
@@ -424,6 +433,7 @@ async def delete_countdown(client, message):
 
 @app.on_message(filters.command('stop'))
 async def stop_running_countdown(client, message):
+    if not await in_admin_group(message): return
     active_countdowns = create_display_active_countdowns() 
     try:
         if active_countdowns != None:
@@ -440,6 +450,7 @@ async def stop_running_countdown(client, message):
 
 @app.on_message(filters.command('kill'))
 async def exit_application(client, message):
+    if not is_super_user(message): return
     try:
         await message.reply(TER_BOT_MSG)
         print(TER_BOT_MSG)
