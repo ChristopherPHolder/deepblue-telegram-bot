@@ -103,6 +103,7 @@ def get_field_input_type(field_name):
         return 'image'
 
 async def handle_select_sequence_countdown(sequence, action, message):
+    global countdowns, sequences
     add_countdown_to_sequence(sequence, message)
     sequence.update({'action': action['followup_action']})
     try:
@@ -117,6 +118,7 @@ async def handle_select_sequence_countdown(sequence, action, message):
         await asyncio.sleep(e.x)
 
 async def handle_select_edit_field(sequence, action, message):
+    global countdowns, sequences
     field_name = message.text
     sequence.update({'edit_field': field_name})
     sequence.update({'action': action['followup_action']})
@@ -129,6 +131,7 @@ async def handle_select_edit_field(sequence, action, message):
         await asyncio.sleep(e.x)
 
 async def handle_edit_field_data(sequence, action, message):
+    global countdowns, sequences
     field_name = sequence['edit_field']
     countdown_id = sequence['countdown_id']
     input_type = get_field_input_type(field_name)
@@ -144,13 +147,13 @@ async def edit_sequence_manager(sequence, message):
     for action in sequence_details['edit_actions']:
         if sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown':
-            await handle_select_sequence_countdown(sequence, action, message)
+            return await handle_select_sequence_countdown(sequence, action, message)
         elif sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown_field':
-            await handle_select_edit_field(sequence, action, message)
+            return await handle_select_edit_field(sequence, action, message)
         elif sequence['action'] == action['action_name']\
         and sequence['action'] == 'edit_data':
-            await handle_edit_field_data(sequence, action, message)
+            return await handle_edit_field_data(sequence, action, message)
 
 async def get_selected_countdown(selected_countdown):
     global countdowns
@@ -399,7 +402,7 @@ async def clear_sequences(client, message):
     global sequences
     sequences = []
     try:
-        message.reply(CLEARED_SEQ)
+        return await message.reply(CLEARED_SEQ)
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
@@ -425,7 +428,7 @@ async def stop_running_countdown(client, message):
     try:
         if active_countdowns != None:
             sequences.append(stop_sequence_dict(message))
-            await message.reply('Which countdown do you want to edit?',
+            await message.reply('Which countdown do you want to stop?',
                 reply_markup=ReplyKeyboardMarkup(active_countdowns, 
                     one_time_keyboard=True, selective=True
                 )
