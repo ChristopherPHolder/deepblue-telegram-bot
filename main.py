@@ -10,7 +10,7 @@ from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 
 from permissions import in_admin_group, is_super_user
 
-from handle_sequences import handle_sequence
+from sequence_handler import handle_sequence
 
 from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
     set_sequence_dict, stop_sequence_dict, preview_sequence_dict,\
