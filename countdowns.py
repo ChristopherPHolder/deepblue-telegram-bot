@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 countdowns = []
 
 async def update_countdown(countdown_id, field_name, field_data):
@@ -52,3 +54,20 @@ def create_display_active_countdowns():
 def append_countdown(countdown):
     global countdowns
     countdowns.append(countdown)
+
+def get_updated_caption(countdown):
+    time_remaining = str(
+        countdown["countdown_date"] - datetime.now(timezone.utc)
+        ).split('.')[0]
+    formated_countdown = (
+        f'{countdown["countdown_caption"]}\n\n{time_remaining}'
+    )
+    return formated_countdown
+
+# TODO # REFACTOR 
+def check_countdown_completed(countdown):
+    countdown_date = countdown["countdown_date"]
+    if (countdown_date < datetime.now(timezone.utc)):
+        return True
+    else:
+        return False

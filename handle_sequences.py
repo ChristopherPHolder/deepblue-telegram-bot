@@ -1,10 +1,16 @@
 import os
 import asyncio
+import random
+from datetime import datetime, timezone
+
 from user_input_extractor import extract_field_data
 
 from sequence_details import sequence_details
 
-from countdowns import update_countdown, get_countdowns
+from countdowns import update_countdown, get_countdowns,\
+    get_selected_countdown, add_countdown_activation_info,\
+    get_updated_caption, check_countdown_completed
+
 from sequences import remove_sequence, update_sequence
 
 from pyrogram import Client
@@ -49,6 +55,63 @@ async def handle_edit_sequence(sequence, message):
         elif sequence['action'] == action['action_name']\
         and sequence['action'] == 'edit_data':
             return await handle_edit_field_data(sequence, action, message)
+
+async def handle_set_sequence(sequence, message):
+    for action in sequence_details['set_actions']:
+        if sequence['action'] == action['action_name']\
+        and sequence['action'] == 'select_countdown':
+            selected_countdown = message.text
+            remove_sequence(sequence)
+            countdown = await get_selected_countdown(selected_countdown)
+            await add_countdown_activation_info(countdown, message)
+            await set_maintain_countdown_message(countdown, message)
+
+async def set_maintain_countdown_message(countdown, message):
+    try:
+        countdown_message = await app.send_photo(
+            message.chat.id, countdown['countdown_image'],
+            caption = get_updated_caption(countdown)
+            )
+        await countdown_message.pin()
+        await asyncio.sleep(random.randint(4, 8))
+        await maintain_countdown_message(countdown, countdown_message)
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
+
+def get_updated_caption(countdown):
+    time_remaining = str(
+        countdown["countdown_date"] - datetime.now(timezone.utc)
+        ).split('.')[0]
+    formated_countdown = (
+        f'{countdown["countdown_caption"]}\n\n{time_remaining}'
+    )
+    return formated_countdown
+
+async def maintain_countdown_message(countdown, countdown_message):
+    while countdown['state'] == 'active':
+        updated_caption = get_updated_caption(countdown)
+        countdown_complete = check_countdown_completed(countdown)
+        if countdown_message.text != updated_caption \
+        and countdown_complete == False:
+            await app.edit_message_caption(
+                countdown_message.chat.id, 
+                countdown_message.message_id, 
+                updated_caption
+            )
+            await asyncio.sleep(random.randint(4, 8))
+        elif countdown_complete == True:
+            return await handle_countdown_ending(countdown, countdown_message)
+
+async def handle_countdown_ending(countdown, countdown_message):
+    await countdown_message.delete()
+    countdown_id = countdown['countdown_id'] # Refactor
+    field_name, field_data = 'state', 'completed'
+    await update_countdown(countdown_id, field_name, field_data)
+    end_message = await app.send_photo(
+        countdown_message.chat.id, countdown['countdown_end_image'],
+        caption=countdown['countdown_end_caption']
+        )
+    return await end_message.pin()
 
 async def handle_select_sequence_countdown(sequence, action, message):
     add_countdown_to_sequence(sequence, message)
