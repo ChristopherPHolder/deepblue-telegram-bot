@@ -9,23 +9,18 @@ from pyrogram.errors import FloodWait
 from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 
 from permissions import in_admin_group, is_super_user
-from handle_sequences import handle_create_sequence, handle_edit_sequence,\
-    handle_set_sequence, handle_stop_sequence, handle_preview_sequence,\
-    handle_delete_sequence
 
-from user_input_extractor import extract_field_data
-from sequence_details import sequence_details
+from handle_sequences import handle_sequence
+
 from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
     set_sequence_dict, stop_sequence_dict, preview_sequence_dict,\
     delete_sequence_dict
 
-from countdowns import get_countdowns, update_countdown,\
-    get_selected_countdown, add_countdown_activation_info,\
-    add_countdown_deactivation_info, remove_countdown,\
+from countdowns import get_countdowns,\
     create_display_countdown_lists, create_display_active_countdowns,\
-    append_countdown, get_updated_caption
+    append_countdown
 
-from sequences import remove_sequence, update_sequence, append_sequence,\
+from sequences import append_sequence,\
     clear_sequences, get_sequences
 from countdown_dictionaries import create_countdown_dict
 
@@ -63,18 +58,7 @@ async def add_countdown_information(client, message):
     sequences = get_sequences()
     for sequence in sequences:
         if user_id == sequence['user_id']:
-            if sequence['sequence'] == 'create_countdown':
-                return await handle_create_sequence(sequence, message)
-            elif sequence['sequence'] == 'edit_countdown':
-                return await handle_edit_sequence(sequence, message)
-            elif sequence['sequence'] == 'set_countdown':
-                return await handle_set_sequence(sequence, message)
-            elif sequence['sequence'] == 'stop_countdown':
-                return await handle_stop_sequence(sequence, message)
-            elif sequence['sequence'] == 'preview_countdown':
-                return await handle_preview_sequence(sequence, message)
-            elif sequence['sequence'] == 'delete_countdown':
-                return await handle_delete_sequence(sequence, message)
+            return await handle_sequence(sequence, message)
 
 @app.on_message(filters.command('help'))
 async def help_message(client, message):

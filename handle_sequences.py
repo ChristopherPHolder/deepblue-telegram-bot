@@ -1,7 +1,6 @@
 import os
 import asyncio
 import random
-from datetime import datetime, timezone
 
 from user_input_extractor import extract_field_data
 
@@ -24,6 +23,20 @@ api_hash = os.environ['API_HASH']
 bot_token = os.environ['BOT_TOKEN']
 
 app = Client(app_name, api_id, api_hash, bot_token)
+
+async def handle_sequence(sequence, message):
+    if sequence['sequence'] == 'create_countdown':
+        return await handle_create_sequence(sequence, message)
+    elif sequence['sequence'] == 'edit_countdown':
+        return await handle_edit_sequence(sequence, message)
+    elif sequence['sequence'] == 'set_countdown':
+        return await handle_set_sequence(sequence, message)
+    elif sequence['sequence'] == 'stop_countdown':
+        return await handle_stop_sequence(sequence, message)
+    elif sequence['sequence'] == 'preview_countdown':
+        return await handle_preview_sequence(sequence, message)
+    elif sequence['sequence'] == 'delete_countdown':
+        return await handle_delete_sequence(sequence, message)
 
 async def handle_create_sequence(sequence, message):
     for action in sequence_details['create_actions']:
