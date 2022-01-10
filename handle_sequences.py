@@ -10,7 +10,7 @@ from sequence_details import sequence_details
 from countdowns import update_countdown, get_countdowns,\
     get_selected_countdown, add_countdown_activation_info,\
     get_updated_caption, check_countdown_completed,\
-    add_countdown_deactivation_info
+    add_countdown_deactivation_info, remove_countdown
 
 from sequences import remove_sequence, update_sequence
 
@@ -95,6 +95,15 @@ async def handle_preview_sequence(sequence, message):
                 )
             except FloodWait as e:
                 await asyncio.sleep(e.x)
+
+async def handle_delete_sequence(sequence, message):
+    for action in sequence_details['set_actions']:
+        if sequence['action'] == action['action_name']\
+        and sequence['action'] == 'select_countdown':
+            selected_countdown = message.text
+            remove_sequence(sequence)
+            countdown = await get_selected_countdown(selected_countdown)
+            remove_countdown(countdown)
 
 async def set_maintain_countdown_message(countdown, message):
     try:
