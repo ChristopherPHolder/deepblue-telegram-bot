@@ -9,7 +9,8 @@ from sequence_details import sequence_details
 
 from countdowns import update_countdown, get_countdowns,\
     get_selected_countdown, add_countdown_activation_info,\
-    get_updated_caption, check_countdown_completed
+    get_updated_caption, check_countdown_completed,\
+    add_countdown_deactivation_info
 
 from sequences import remove_sequence, update_sequence
 
@@ -65,6 +66,15 @@ async def handle_set_sequence(sequence, message):
             countdown = await get_selected_countdown(selected_countdown)
             await add_countdown_activation_info(countdown, message)
             await set_maintain_countdown_message(countdown, message)
+
+async def handle_stop_sequence(sequence, message):
+    for action in sequence_details['set_actions']:
+        if sequence['action'] == action['action_name']\
+        and sequence['action'] == 'select_countdown':
+            selected_countdown = message.text
+            countdown = await get_selected_countdown(selected_countdown)
+            await add_countdown_deactivation_info(countdown, message) 
+            remove_sequence(sequence)
 
 async def set_maintain_countdown_message(countdown, message):
     try:

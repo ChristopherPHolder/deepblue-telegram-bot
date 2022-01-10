@@ -10,7 +10,7 @@ from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 
 from permissions import in_admin_group, is_super_user
 from handle_sequences import handle_create_sequence, handle_edit_sequence,\
-    handle_set_sequence
+    handle_set_sequence, handle_stop_sequence
 
 from user_input_extractor import extract_field_data
 from sequence_details import sequence_details
@@ -67,15 +67,6 @@ async def delete_sequence_manager(sequence, message):
             countdown = await get_selected_countdown(selected_countdown)
             remove_countdown(countdown)
 
-async def stop_sequence_manager(sequence, message):
-    for action in sequence_details['set_actions']:
-        if sequence['action'] == action['action_name']\
-        and sequence['action'] == 'select_countdown':
-            selected_countdown = message.text
-            countdown = await get_selected_countdown(selected_countdown)
-            await add_countdown_deactivation_info(countdown, message) 
-            remove_sequence(sequence)
-
 @app.on_message(filters.command('set'))
 async def set_countdown(client, message):
     global sequences
@@ -107,7 +98,7 @@ async def add_countdown_information(client, message):
             elif sequence['sequence'] == 'set_countdown':
                 return await handle_set_sequence(sequence, message)
             elif sequence['sequence'] == 'stop_countdown':
-                return await stop_sequence_manager(sequence, message)
+                return await handle_stop_sequence(sequence, message)
             elif sequence['sequence'] == 'preview_countdown':
                 return await preview_sequence_manager(sequence, message)
             elif sequence['sequence'] == 'delete_countdown':
