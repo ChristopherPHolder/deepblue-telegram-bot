@@ -10,7 +10,7 @@ from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 
 from permissions import in_admin_group, is_super_user
 from handle_sequences import handle_create_sequence, handle_edit_sequence,\
-    handle_set_sequence, handle_stop_sequence
+    handle_set_sequence, handle_stop_sequence, handle_preview_sequence
 
 from user_input_extractor import extract_field_data
 from sequence_details import sequence_details
@@ -37,26 +37,6 @@ api_hash = os.environ['API_HASH']
 bot_token = os.environ['BOT_TOKEN']
 
 app = Client(app_name, api_id, api_hash, bot_token)
-
-async def preview_sequence_manager(sequence, message):
-    for action in sequence_details['set_actions']:
-        if sequence['action'] == action['action_name']\
-        and sequence['action'] == 'select_countdown':
-            selected_countdown = message.text
-            remove_sequence(sequence)
-            countdown = await get_selected_countdown(selected_countdown)
-            try:
-                await app.send_photo(
-                    message.chat.id, countdown['countdown_image'],
-                    caption=get_updated_caption(countdown)
-                )
-                await asyncio.sleep(1)
-                await app.send_photo(
-                    message.chat.id, countdown['countdown_end_image'],
-                    caption=countdown['countdown_end_caption']
-                )
-            except FloodWait as e:
-                await asyncio.sleep(e.x)
 
 async def delete_sequence_manager(sequence, message):
     for action in sequence_details['set_actions']:
@@ -100,7 +80,7 @@ async def add_countdown_information(client, message):
             elif sequence['sequence'] == 'stop_countdown':
                 return await handle_stop_sequence(sequence, message)
             elif sequence['sequence'] == 'preview_countdown':
-                return await preview_sequence_manager(sequence, message)
+                return await handle_preview_sequence(sequence, message)
             elif sequence['sequence'] == 'delete_countdown':
                 return await delete_sequence_manager(sequence, message)
 

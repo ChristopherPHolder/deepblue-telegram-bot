@@ -76,6 +76,26 @@ async def handle_stop_sequence(sequence, message):
             await add_countdown_deactivation_info(countdown, message) 
             remove_sequence(sequence)
 
+async def handle_preview_sequence(sequence, message):
+    for action in sequence_details['set_actions']:
+        if sequence['action'] == action['action_name']\
+        and sequence['action'] == 'select_countdown':
+            selected_countdown = message.text
+            remove_sequence(sequence)
+            countdown = await get_selected_countdown(selected_countdown)
+            try:
+                await app.send_photo(
+                    message.chat.id, countdown['countdown_image'],
+                    caption=get_updated_caption(countdown)
+                )
+                await asyncio.sleep(1)
+                await app.send_photo(
+                    message.chat.id, countdown['countdown_end_image'],
+                    caption=countdown['countdown_end_caption']
+                )
+            except FloodWait as e:
+                await asyncio.sleep(e.x)
+
 async def set_maintain_countdown_message(countdown, message):
     try:
         countdown_message = await app.send_photo(
@@ -87,15 +107,6 @@ async def set_maintain_countdown_message(countdown, message):
         await maintain_countdown_message(countdown, countdown_message)
     except FloodWait as e:
         await asyncio.sleep(e.x)
-
-def get_updated_caption(countdown):
-    time_remaining = str(
-        countdown["countdown_date"] - datetime.now(timezone.utc)
-        ).split('.')[0]
-    formated_countdown = (
-        f'{countdown["countdown_caption"]}\n\n{time_remaining}'
-    )
-    return formated_countdown
 
 async def maintain_countdown_message(countdown, countdown_message):
     while countdown['state'] == 'active':
