@@ -9,8 +9,9 @@ from pyrogram.errors import FloodWait
 from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 
 from permissions import in_admin_group, is_super_user
+from handle_sequences import handle_create_sequence
 
-from user_input_extractor import convert_input_to_datetime
+from user_input_extractor import extract_field_data
 from sequence_details import sequence_details
 from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
     set_sequence_dict, stop_sequence_dict, preview_sequence_dict,\
@@ -35,40 +36,6 @@ api_hash = os.environ['API_HASH']
 bot_token = os.environ['BOT_TOKEN']
 
 app = Client(app_name, api_id, api_hash, bot_token)
-
-async def extract_field_data(input_type, message):
-    if input_type == 'text':
-        return message.text
-    if input_type == 'date_time':
-        try:
-            return convert_input_to_datetime(message.text)
-        except AttributeError as e:
-            return convert_input_to_datetime(message)
-    elif input_type == 'image':
-        try:
-            return await app.download_media(message)
-        except ValueError as e:
-            print(e, 'Failed attempt to extract media!')
-
-async def create_sequence_manager(sequence, message):
-    for action in sequence_details['create_actions']:
-        if sequence['action'] == action['action_name']:
-            input_type = action['input_type']
-            field_data = await extract_field_data(input_type, message)
-            if field_data:
-                await update_countdown(sequence['countdown_id'], 
-                    action['field_name'], field_data)
-                if action['followup_action']:
-                    sequence.update({'action': action['followup_action']})
-                    return await app.send_message(message.chat.id, 
-                        action['followup_message'], reply_markup=ForceReply())
-                else:
-                    remove_sequence(sequence)
-                    return await app.send_message(message.chat.id, 
-                        action['followup_message'])
-            else:
-                return await app.send_message(message.chat.id, 
-                    action['retry_message'], reply_markup=ForceReply())
 
 def add_countdown_to_sequence(sequence, message):
     countdowns = get_countdowns()
@@ -275,7 +242,7 @@ async def add_countdown_information(client, message):
     for sequence in sequences:
         if user_id == sequence['user_id']:
             if sequence['sequence'] == 'create_countdown':
-                return await create_sequence_manager(sequence, message)
+                return await handle_create_sequence(sequence, message)
             elif sequence['sequence'] == 'edit_countdown':
                 return await edit_sequence_manager(sequence, message)
             elif sequence['sequence'] == 'set_countdown':
