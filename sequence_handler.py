@@ -6,10 +6,9 @@ from user_input_extractor import extract_field_data
 
 from sequence_details import sequence_details
 
-from countdowns import update_countdown, get_countdowns,\
-    get_selected_countdown, add_countdown_activation_info,\
-    get_updated_caption, check_countdown_completed,\
-    add_countdown_deactivation_info, remove_countdown
+from countdowns import update_countdown, remove_countdown,\
+    get_countdown_by_id, get_countdown_by_name, get_countdowns,\
+    get_updated_caption, is_countdown_completed
 
 from sequences import remove_sequence, update_sequence
 
@@ -44,8 +43,10 @@ async def handle_create_sequence(sequence, message):
             input_type = action['input_type']
             field_data = await extract_field_data(input_type, message)
             if field_data:
-                await update_countdown(sequence['countdown_id'], 
-                    action['field_name'], field_data)
+                countdown_id = sequence['countdown_id']
+                countdown = get_countdown_by_id(countdown_id)
+                field_name = action['field_name']
+                update_countdown(countdown, field_name, field_data)
                 if action['followup_action']:
                     sequence.update({'action': action['followup_action']})
                     return await app.send_message(message.chat.id, 
@@ -74,28 +75,30 @@ async def handle_set_sequence(sequence, message):
     for action in sequence_details['set_actions']:
         if sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown':
-            selected_countdown = message.text
+            countdown_name = message.text
             remove_sequence(sequence)
-            countdown = await get_selected_countdown(selected_countdown)
-            await add_countdown_activation_info(countdown, message)
+            countdown = get_countdown_by_name(countdown_name)
+            field_name, field_data = 'state', 'active'
+            update_countdown(countdown, field_name, field_data)
             await set_maintain_countdown_message(countdown, message)
 
 async def handle_stop_sequence(sequence, message):
     for action in sequence_details['set_actions']:
         if sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown':
-            selected_countdown = message.text
-            countdown = await get_selected_countdown(selected_countdown)
-            await add_countdown_deactivation_info(countdown, message) 
+            countdown_name = message.text
+            countdown = get_countdown_by_name(countdown_name)
+            field_name, field_data = 'state', 'stoped'
+            update_countdown(countdown, field_name, field_data) 
             remove_sequence(sequence)
 
 async def handle_preview_sequence(sequence, message):
     for action in sequence_details['set_actions']:
         if sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown':
-            selected_countdown = message.text
+            countdown_name = message.text
             remove_sequence(sequence)
-            countdown = await get_selected_countdown(selected_countdown)
+            countdown = get_countdown_by_name(countdown_name)
             try:
                 await app.send_photo(
                     message.chat.id, countdown['countdown_image'],
@@ -113,9 +116,9 @@ async def handle_delete_sequence(sequence, message):
     for action in sequence_details['set_actions']:
         if sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown':
-            selected_countdown = message.text
+            countdown_name = message.text
             remove_sequence(sequence)
-            countdown = await get_selected_countdown(selected_countdown)
+            countdown = get_countdown_by_name(countdown_name)
             remove_countdown(countdown)
 
 async def set_maintain_countdown_message(countdown, message):
@@ -132,24 +135,19 @@ async def set_maintain_countdown_message(countdown, message):
 
 async def maintain_countdown_message(countdown, countdown_message):
     while countdown['state'] == 'active':
-        updated_caption = get_updated_caption(countdown)
-        countdown_complete = check_countdown_completed(countdown)
-        if countdown_message.text != updated_caption \
-        and countdown_complete == False:
-            await app.edit_message_caption(
-                countdown_message.chat.id, 
-                countdown_message.message_id, 
-                updated_caption
-            )
-            await asyncio.sleep(random.randint(4, 8))
-        elif countdown_complete == True:
+        if is_countdown_completed(countdown):
             return await handle_countdown_ending(countdown, countdown_message)
+        updated_caption = get_updated_caption(countdown)
+        if countdown_message.text != updated_caption:
+            await app.edit_message_caption(countdown_message.chat.id, 
+                        countdown_message.message_id, updated_caption)
+            await asyncio.sleep(random.randint(4, 8))
+
 
 async def handle_countdown_ending(countdown, countdown_message):
     await countdown_message.delete()
-    countdown_id = countdown['countdown_id'] # Refactor
     field_name, field_data = 'state', 'completed'
-    await update_countdown(countdown_id, field_name, field_data)
+    update_countdown(countdown, field_name, field_data)
     end_message = await app.send_photo(
         countdown_message.chat.id, countdown['countdown_end_image'],
         caption=countdown['countdown_end_caption']
@@ -189,7 +187,8 @@ async def handle_edit_field_data(sequence, action, message):
     countdown_id = sequence['countdown_id']
     input_type = get_field_input_type(field_name)
     field_data = await extract_field_data(input_type, message)
-    await update_countdown(countdown_id, field_name, field_data)
+    countdown = get_countdown_by_id(countdown_id)
+    update_countdown(countdown, field_name, field_data)
     remove_sequence(sequence)
     try:
         await app.send_message(message.chat.id, action['followup_message'])
