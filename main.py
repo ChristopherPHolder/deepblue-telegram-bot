@@ -20,8 +20,7 @@ from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
     delete_sequence_dict
 
 from countdowns import get_countdowns,\
-    create_display_countdown_lists, create_display_active_countdowns,\
-    append_countdown
+    append_countdown, get_active_countdown_names, get_countdown_names
 
 from countdowns import update_countdown, remove_countdown,\
     get_countdown_by_id, get_countdown_by_name, get_countdowns,\
@@ -33,8 +32,10 @@ from sequences import remove_sequence, update_sequence
 
 from countdown_dictionaries import create_countdown_dict
 
-from messages import RUN_BOT_MSG, TER_BOT_MSG, NO_ACTIVE_CD_MSG,\
-    NO_CD_TO_DEL, HELP_MSG, CLEARED_SEQ, NO_CD_TO_PRE, NO_CD_TO_SET
+from messages import RUN_BOT_MSG, TER_BOT_MSG, HELP_MSG, CLEARED_SEQ
+
+from error_messages import ERR_P_1, ERR_P_2, ERR_P_3, ERR_P_4, ERR_P_5,\
+    ERR_P_6, ERR_P_7
 
 app_name = os.environ['APP_NAME']
 api_id = int(os.environ['API_ID'])
@@ -57,6 +58,12 @@ async def extract_field_data(input_type, message):
             return await app.download_media(message)
         except ValueError as e:
             print(e, 'Failed attempt to extract media!')
+
+async def reply_error_message(message, error_message):
+    try:
+        return await message.reply(error_message)
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
 
 async def handle_sequence(sequence, message):
     if sequence['sequence'] == 'create_countdown':
@@ -262,18 +269,17 @@ def get_field_input_type(field_name):
 
 @app.on_message(filters.command('set'))
 async def set_countdown(client, message):
-    display_countdowns = create_display_countdown_lists()
+    countdown_names = get_countdown_names()
+    if not countdown_names:
+        return await reply_error_message(message, ERR_P_7)
+    sequence = set_sequence_dict(message)
+    append_sequence(sequence)
     try:
-        if display_countdowns:
-            sequence = set_sequence_dict(message)
-            append_sequence(sequence)
-            return await message.reply('Which countdown would you like to set?',
-                reply_markup=ReplyKeyboardMarkup(display_countdowns,
-                    one_time_keyboard=True,selective=True
-                )
+        return await message.reply('Which countdown would you like to set?',
+            reply_markup=ReplyKeyboardMarkup(countdown_names,
+                one_time_keyboard=True,selective=True
             )
-        else:
-            return await message.reply(NO_CD_TO_SET)
+        )
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
@@ -287,17 +293,21 @@ async def add_countdown_information(client, message):
 
 @app.on_message(filters.command('help'))
 async def help_message(client, message):
-    if not await in_admin_group(message): return
+    if not await in_admin_group(message):
+        return await reply_error_message(message, ERR_P_2)
     try:
         await message.reply(HELP_MSG)
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-# TODO # Add error message for empty list
+# TODO # REFACTOR - Extract formating funtion.
 @app.on_message(filters.command('list'))
 async def list_countdowns(client, message):
-    if not await in_admin_group(message): return
+    if not await in_admin_group(message):
+        return await reply_error_message(message, ERR_P_2)
     countdowns = get_countdowns()
+    if not countdowns:
+        return await reply_error_message(message, ERR_P_7)
     countdown_list_message = 'List of countdowns:\n'
     for count, countdown in enumerate(countdowns):
         countdown_item = f"{str(count)}- {countdown['countdown_name']}\n"
@@ -309,9 +319,9 @@ async def list_countdowns(client, message):
 
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
-    if not await in_admin_group(message): return
-    global sequences
-    countdown_id = uuid4()
+    if not await in_admin_group(message):
+        return await reply_error_message(message, ERR_P_2)
+    countdown_id = str(uuid4())
     countdown = create_countdown_dict(countdown_id, message)
     append_countdown(countdown)
     sequence = create_sequence_dict(countdown_id, message)
@@ -325,17 +335,16 @@ async def create_countdown(client, message):
 
 @app.on_message(filters.command('edit'))
 async def edit_countdown(client, message):
-    if not await in_admin_group(message): return
-    countdown_lst = create_display_countdown_lists()
-    if not countdown_lst: return
+    if not await in_admin_group(message):
+        return await reply_error_message(message, ERR_P_2)
+    countdown_names = get_countdown_names()
+    if not countdown_names:
+        return await reply_error_message(message, ERR_P_6)
     sequence = edit_sequence_dict(message)
     append_sequence(sequence)
-    lst = create_display_countdown_lists()
-    print(lst)
     try:
         await message.reply('Which countdown do you want to edit?',
-            reply_markup=ReplyKeyboardMarkup(
-                lst, 
+            reply_markup=ReplyKeyboardMarkup(countdown_names, 
                 one_time_keyboard=True, selective=True
             )
         )
@@ -345,27 +354,24 @@ async def edit_countdown(client, message):
 @app.on_message(filters.command('preview'))
 async def preview_coundown_messages(client, message):
     countdowns = get_countdowns()
-    if countdowns:
-        display_countdowns = create_display_countdown_lists()
-        sequence = preview_sequence_dict(message)
-        append_sequence(sequence)
-        try:
-            await message.reply('Which countdown would you like to preview?',
-                reply_markup=ReplyKeyboardMarkup(display_countdowns,
-                    one_time_keyboard=True, selective=True
-                )
+    if not countdowns:
+        return await reply_error_message(message, ERR_P_5)
+    countdown_names = get_countdown_names()
+    sequence = preview_sequence_dict(message)
+    append_sequence(sequence)
+    try:
+        await message.reply('Which countdown would you like to preview?',
+            reply_markup=ReplyKeyboardMarkup(countdown_names,
+                one_time_keyboard=True, selective=True
             )
-        except FloodWait as e:
-            await asyncio.sleep(e.x)
-    else:
-        try:
-            await message.reply(NO_CD_TO_PRE)
-        except FloodWait as e:
-            await asyncio.sleep(e.x)
+        )
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
 
 @app.on_message(filters.command('clear'))
 async def clear_sequences(client, message):
-    if not await in_admin_group(message): return
+    if not await in_admin_group(message):
+        return await reply_error_message(message, ERR_P_2)
     clear_sequences()
     try:
         return await message.reply(CLEARED_SEQ)
@@ -374,44 +380,46 @@ async def clear_sequences(client, message):
 
 @app.on_message(filters.command('delete'))
 async def delete_countdown(client, message):
-    if not await in_admin_group(message): return
+    if not await in_admin_group(message):
+        return await reply_error_message(message, ERR_P_2)
+    countdowns = get_countdowns()
+    if not countdowns:
+        return await reply_error_message(message, ERR_P_4)
     sequence = delete_sequence_dict(message)
     append_sequence(sequence)
-    countdowns = get_countdowns()
-    if len(countdowns) == 0:
-        try:
-            await message.reply(NO_CD_TO_DEL)
-        except FloodWait as e:
-            await asyncio.sleep(e.x)
-    else:
-        display_countdowns = create_display_countdown_lists()
+    countdown_names = get_countdown_names()
+    try:
         await message.reply('Which countdown would you like to delete?',
-            reply_markup=ReplyKeyboardMarkup(display_countdowns,
+            reply_markup=ReplyKeyboardMarkup(countdown_names,
                 one_time_keyboard=True,selective=True
             )
         )
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
+
 
 @app.on_message(filters.command('stop'))
 async def stop_running_countdown(client, message):
-    if not await in_admin_group(message): return
-    active_countdowns = create_display_active_countdowns() 
+    if not await in_admin_group(message):
+        return await reply_error_message(message, ERR_P_2)
+    active_countdowns = get_active_countdown_names()
+    if not active_countdowns:
+        return await reply_error_message(message, ERR_P_3)
+    sequence = stop_sequence_dict(message)
+    append_sequence(sequence)
     try:
-        if active_countdowns != None:
-            sequence = stop_sequence_dict(message)
-            append_sequence(sequence)
-            await message.reply('Which countdown do you want to stop?',
-                reply_markup=ReplyKeyboardMarkup(active_countdowns, 
-                    one_time_keyboard=True, selective=True
-                )
+        await message.reply('Which countdown do you want to stop?',
+            reply_markup=ReplyKeyboardMarkup(active_countdowns, 
+                one_time_keyboard=True, selective=True
             )
-        elif active_countdowns == None:
-            return await message.reply(NO_ACTIVE_CD_MSG)
+        )
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
 @app.on_message(filters.command('kill'))
 async def exit_application(client, message):
-    if not is_super_user(message): return
+    if not is_super_user(message):
+        return await reply_error_message(message, ERR_P_1)
     try:
         await message.reply(TER_BOT_MSG)
         print(TER_BOT_MSG)
@@ -422,5 +430,3 @@ async def exit_application(client, message):
 if __name__ == '__main__':
     print(RUN_BOT_MSG)
     app.run()
-
-## TODO CREATE FUNCTION TO UNIFY ERROR MESSAGES

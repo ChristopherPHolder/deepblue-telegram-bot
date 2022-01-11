@@ -170,21 +170,20 @@ def convert_countdown_tuple_to_dict(countdown):
         'countdown_state': countdown_tuple[8]
     }
 
-def create_display_countdown_lists():
+def get_countdown_names():
     countdowns = get_countdowns()
-    countdown_lists = []
+    countdown_names = []
     for countdown in countdowns:
-        countdown_lists.append([countdown['countdown_name']])
-    return countdown_lists
+        countdown_names.append([countdown['countdown_name']])
+        return countdown_names
 
-def create_display_active_countdowns():
+def get_active_countdown_names():
     countdowns = get_countdowns()
-    countdown_lists = []
+    active_countdown_names = []
     for countdown in countdowns:
         if countdown['countdown_state'] == 'active':
-            countdown_lists.append([countdown['countdown_name']])
-    if countdown_lists: return countdown_lists
-    else: return
+            active_countdown_names.append([countdown['countdown_name']])
+    return active_countdown_names
 
 def get_updated_caption(countdown):
     countdown_date = convert_input_to_datetime(countdown["countdown_date"])
