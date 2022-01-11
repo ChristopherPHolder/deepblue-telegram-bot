@@ -10,19 +10,12 @@ bot_token = os.environ['BOT_TOKEN']
 
 app = Client(app_name, api_id, api_hash, bot_token)
 
-async def extract_field_data(input_type, message):
-    if input_type == 'text':
-        return message.text
-    if input_type == 'date_time':
-        try:
-            return convert_input_to_datetime(message.text)
-        except AttributeError as e:
-            return convert_input_to_datetime(message)
-    elif input_type == 'image':
-        try:
-            return await app.download_media(message)
-        except ValueError as e:
-            print(e, 'Failed attempt to extract media!')
+def is_valid_datetime(user_input):
+    try:
+        convert_input_to_datetime(user_input)
+        return True
+    except IndexError as e:
+        return False
 
 def convert_input_to_datetime(user_input):
     try:

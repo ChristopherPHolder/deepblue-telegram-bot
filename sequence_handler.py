@@ -43,7 +43,7 @@ async def handle_create_sequence(sequence, message):
             input_type = action['input_type']
             field_data = await extract_field_data(input_type, message)
             if field_data:
-                countdown_id = sequence['countdown_id']
+                countdown_id = str(sequence['countdown_id'])
                 countdown = get_countdown_by_id(countdown_id)
                 field_name = action['field_name']
                 update_countdown(countdown, field_name, field_data)
