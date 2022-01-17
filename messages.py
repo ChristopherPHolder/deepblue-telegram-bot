@@ -17,3 +17,18 @@ HELP_MSG = (
     )
 
 CLEARED_SEQ = 'All sequences have been cleared!'
+
+def get_list_countdowns_message(countdowns):
+    message = 'List of countdowns:\n'
+    for count, countdown in enumerate(countdowns):
+        countdown_item = f"{str(count+1)}- {countdown['countdown_name']}\n"
+        message += countdown_item
+    return message
+
+def get_list_running_countdowns_message(running_countdowns):
+    message = 'List of running countdowns:\n'
+    for count, countdown in enumerate(running_countdowns):
+        countdown_item = f"{str(count+1)}- {countdown['countdown_id']}" +\
+            f" in {countdown['message_chat_title']}\n"
+        message += countdown_item
+    return message

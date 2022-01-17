@@ -25,10 +25,10 @@ from sequences import remove_sequence, update_sequence, get_new_sequence,\
 from running_countdowns import append_running_countdown,\
     remove_running_countdown, get_running_countdowns
 
-from messages import RUN_BOT_MSG, TER_BOT_MSG, HELP_MSG, CLEARED_SEQ
+from messages import RUN_BOT_MSG, TER_BOT_MSG, HELP_MSG, CLEARED_SEQ,\
+    get_list_countdowns_message, get_list_running_countdowns_message
 
-from error_messages import ERR_P_1, ERR_P_2, ERR_P_3, ERR_P_4, ERR_P_5,\
-    ERR_P_6, ERR_P_7
+from error_messages import ERR_P_3, ERR_P_4, ERR_P_5, ERR_P_6, ERR_P_7
 
 app_name = os.environ['APP_NAME']
 api_id = int(os.environ['API_ID'])
@@ -276,21 +276,19 @@ async def help_message(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-# TODO # REFACTOR - Extract formating funtion.
-# TODO # feat: add formating for running countdowns messages
 @app.on_message(filters.command('list'))
 async def list_countdowns(client, message):
     if not await in_admin_group(message): return
     if not (countdowns := get_countdowns()):
         return await reply_error_message(message, ERR_P_7)
-    countdown_list_message = 'List of countdowns:\n'
-    for count, countdown in enumerate(countdowns):
-        countdown_item = f"{str(count)}- {countdown['countdown_name']}\n"
-        countdown_list_message += countdown_item
+    list_countdowns_message = get_list_countdowns_message(countdowns)
     running_countdowns = get_running_countdowns()
+    list_running_countdowns_message = get_list_running_countdowns_message(
+        running_countdowns
+    )
     try:
-        await message.reply(running_countdowns)
-        return await message.reply(countdown_list_message)
+        await message.reply(list_running_countdowns_message)
+        await message.reply(list_countdowns_message)
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
