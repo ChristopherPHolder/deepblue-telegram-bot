@@ -361,9 +361,8 @@ async def preview_coundown_messages(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-# TODO fix: missing parameter error corrected
 @app.on_message(filters.command('clear'))
-async def clear_sequences(client, message):
+async def clear_active_sequences(client, message):
     if not await in_admin_group(message):
         return await reply_error_message(message, ERR_P_2)
     clear_sequences()
