@@ -14,22 +14,13 @@ from user_input_extractor import is_valid_datetime
 
 from sequence_details import sequence_details
 
-from sequence_dictionaries import create_sequence_dict, edit_sequence_dict,\
-    set_sequence_dict, stop_sequence_dict, preview_sequence_dict,\
-    delete_sequence_dict
+from countdowns import append_countdown, update_countdown, remove_countdown,\
+    get_countdowns, get_countdown_by_id, get_countdown_by_name,\
+    get_active_countdown_names, get_countdown_names, get_new_countdown,\
+    get_updated_caption, is_countdown_completed, get_new_countdown
 
-from countdowns import get_countdowns,\
-    append_countdown, get_active_countdown_names, get_countdown_names
-
-from countdowns import update_countdown, remove_countdown,\
-    get_countdown_by_id, get_countdown_by_name, get_countdowns,\
-    get_updated_caption, is_countdown_completed
-
-from sequences import append_sequence,\
-    clear_sequences, get_sequences
-from sequences import remove_sequence, update_sequence
-
-from countdown_dictionaries import create_countdown_dict
+from sequences import remove_sequence, update_sequence, get_new_sequence,\
+    append_sequence, clear_sequences, get_sequences
 
 from messages import RUN_BOT_MSG, TER_BOT_MSG, HELP_MSG, CLEARED_SEQ
 
@@ -304,7 +295,7 @@ async def set_countdown(client, message):
     countdown_names = get_countdown_names()
     if not countdown_names:
         return await reply_error_message(message, ERR_P_7)
-    sequence = set_sequence_dict(message)
+    sequence = get_new_sequence(message, 'set_countdown')
     append_sequence(sequence)
     try:
         return await message.reply('Which countdown would you like to set?',
@@ -320,9 +311,9 @@ async def create_countdown(client, message):
     if not await in_admin_group(message):
         return await reply_error_message(message, ERR_P_2)
     countdown_id = str(uuid4())
-    countdown = create_countdown_dict(countdown_id, message)
+    countdown = get_new_countdown(countdown_id, message)
     append_countdown(countdown)
-    sequence = create_sequence_dict(countdown_id, message)
+    sequence = get_new_sequence(message, 'create_countdown', countdown_id)
     append_sequence(sequence)
     try:
         await message.reply('What do you want to name the countdown?', 
@@ -337,7 +328,7 @@ async def edit_countdown(client, message):
         return await reply_error_message(message, ERR_P_2)
     if not (countdown_names := get_countdown_names()):
         return await reply_error_message(message, ERR_P_6)
-    sequence = edit_sequence_dict(message)
+    sequence = get_new_sequence(message, 'edit_countdown')
     append_sequence(sequence)
     try:
         await message.reply('Which countdown do you want to edit?',
@@ -353,7 +344,7 @@ async def preview_coundown_messages(client, message):
     if not (countdown_names := get_countdowns()):
         return await reply_error_message(message, ERR_P_5)
     countdown_names = get_countdown_names()
-    sequence = preview_sequence_dict(message)
+    sequence = get_new_sequence(message, 'preview_countdown')
     append_sequence(sequence)
     try:
         await message.reply('Which countdown would you like to preview?',
@@ -380,7 +371,7 @@ async def delete_countdown(client, message):
         return await reply_error_message(message, ERR_P_2)
     if not (countdown_names := get_countdowns()):
         return await reply_error_message(message, ERR_P_4)
-    sequence = delete_sequence_dict(message)
+    sequence = get_new_sequence(message, 'delete_countdown')
     append_sequence(sequence)
     countdown_names = get_countdown_names()
     try:
@@ -398,7 +389,7 @@ async def stop_running_countdown(client, message):
         return await reply_error_message(message, ERR_P_2)
     if not (active_countdowns := get_active_countdown_names()):
         return await reply_error_message(message, ERR_P_3)
-    sequence = stop_sequence_dict(message)
+    sequence = get_new_sequence(message, 'stop_sequence')
     append_sequence(sequence)
     try:
         await message.reply('Which countdown do you want to stop?',
