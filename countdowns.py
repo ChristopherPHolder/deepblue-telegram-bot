@@ -36,7 +36,6 @@ def delete_countdown(countdown, cur):
     })
 
 def update_countdown_in_db(cur, field_name, field_data, countdown):
-    print(field_name, field_data)
     if field_name == 'countdown_name':
         cur.execute(""" UPDATE countdowns 
                         SET countdown_name = :field_data
