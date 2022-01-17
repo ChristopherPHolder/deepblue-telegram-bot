@@ -22,6 +22,9 @@ from countdowns import append_countdown, update_countdown, remove_countdown,\
 from sequences import remove_sequence, update_sequence, get_new_sequence,\
     append_sequence, clear_sequences, get_sequences
 
+from running_countdowns import append_running_countdown,\
+    remove_running_countdown, get_running_countdowns
+
 from messages import RUN_BOT_MSG, TER_BOT_MSG, HELP_MSG, CLEARED_SEQ
 
 from error_messages import ERR_P_1, ERR_P_2, ERR_P_3, ERR_P_4, ERR_P_5,\
@@ -155,15 +158,15 @@ async def handle_delete_sequence(sequence, message):
             remove_countdown(countdown)
 
 async def set_maintain_countdown_message(countdown, message):
-    print(countdown)
     try:
         countdown_message = await app.send_photo(
             message.chat.id, countdown['countdown_image'],
             caption = get_updated_caption(countdown)
             )
         await countdown_message.pin()
+        append_running_countdown(countdown, countdown_message)
         await asyncio.sleep(random.randint(4, 8))
-        await maintain_countdown_message(countdown, countdown_message)
+        asyncio.ensure_future(maintain_countdown_message(countdown, countdown_message))
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
@@ -179,8 +182,8 @@ async def maintain_countdown_message(countdown, countdown_message):
                         countdown_message.message_id, updated_caption)
             await asyncio.sleep(random.randint(4, 8))
 
-
 async def handle_countdown_ending(countdown, countdown_message):
+    remove_running_countdown(countdown_message)
     await countdown_message.delete()
     field_name, field_data = 'countdown_state', 'completed'
     update_countdown(countdown, field_name, field_data)
@@ -275,6 +278,7 @@ async def help_message(client, message):
         await asyncio.sleep(e.x)
 
 # TODO # REFACTOR - Extract formating funtion.
+# TODO # feat: add formating for running countdowns messages
 @app.on_message(filters.command('list'))
 async def list_countdowns(client, message):
     if not await in_admin_group(message):
@@ -285,7 +289,9 @@ async def list_countdowns(client, message):
     for count, countdown in enumerate(countdowns):
         countdown_item = f"{str(count)}- {countdown['countdown_name']}\n"
         countdown_list_message += countdown_item
+    running_countdowns = get_running_countdowns()
     try:
+        await message.reply(running_countdowns)
         return await message.reply(countdown_list_message)
     except FloodWait as e:
         await asyncio.sleep(e.x)
@@ -355,6 +361,7 @@ async def preview_coundown_messages(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
+# TODO fix: missing parameter error corrected
 @app.on_message(filters.command('clear'))
 async def clear_sequences(client, message):
     if not await in_admin_group(message):
@@ -400,6 +407,7 @@ async def stop_running_countdown(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
+# TODO # fix: mallock error message in kill command
 @app.on_message(filters.command('kill'))
 async def exit_application(client, message):
     if not is_super_user(message):
@@ -410,6 +418,25 @@ async def exit_application(client, message):
         exit()
     except FloodWait as e:
         await asyncio.sleep(e.x)
+
+# TODO feat: add empty replies
+@app.on_message(filters.command('re_active'))
+async def re_active_running_processes(client, message):
+    await re_activate_running_countdowns(client, message)
+
+async def re_activate_running_countdowns(client, message):
+    running_countdowns = get_running_countdowns()
+    for running_countdown in running_countdowns:
+        countdown = get_countdown_by_id(
+            running_countdown['countdown_id']
+        )
+        countdown_message = await app.get_messages(
+            int(running_countdown['message_chat_id']),
+            int(running_countdown['message_id'])
+        )
+        asyncio.ensure_future(maintain_countdown_message(
+                            countdown, countdown_message))
+    print('mainting', countdown)
 
 if __name__ == '__main__':
     print(RUN_BOT_MSG)
