@@ -270,8 +270,7 @@ async def add_countdown_information(client, message):
 
 @app.on_message(filters.command('help'))
 async def help_message(client, message):
-    if not await in_admin_group(message):
-        return await reply_error_message(message, ERR_P_2)
+    if not await in_admin_group(message): return
     try:
         await message.reply(HELP_MSG)
     except FloodWait as e:
@@ -281,8 +280,7 @@ async def help_message(client, message):
 # TODO # feat: add formating for running countdowns messages
 @app.on_message(filters.command('list'))
 async def list_countdowns(client, message):
-    if not await in_admin_group(message):
-        return await reply_error_message(message, ERR_P_2)
+    if not await in_admin_group(message): return
     if not (countdowns := get_countdowns()):
         return await reply_error_message(message, ERR_P_7)
     countdown_list_message = 'List of countdowns:\n'
@@ -314,8 +312,7 @@ async def set_countdown(client, message):
 
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
-    if not await in_admin_group(message):
-        return await reply_error_message(message, ERR_P_2)
+    if not await in_admin_group(message): return
     countdown_id = str(uuid4())
     countdown = get_new_countdown(countdown_id, message)
     append_countdown(countdown)
@@ -330,8 +327,7 @@ async def create_countdown(client, message):
 
 @app.on_message(filters.command('edit'))
 async def edit_countdown(client, message):
-    if not await in_admin_group(message):
-        return await reply_error_message(message, ERR_P_2)
+    if not await in_admin_group(message): return
     if not (countdown_names := get_countdown_names()):
         return await reply_error_message(message, ERR_P_6)
     sequence = get_new_sequence(message, 'edit_countdown')
@@ -363,8 +359,7 @@ async def preview_coundown_messages(client, message):
 
 @app.on_message(filters.command('clear'))
 async def clear_active_sequences(client, message):
-    if not await in_admin_group(message):
-        return await reply_error_message(message, ERR_P_2)
+    if not await in_admin_group(message): return
     clear_sequences()
     try:
         return await message.reply(CLEARED_SEQ)
@@ -373,8 +368,7 @@ async def clear_active_sequences(client, message):
 
 @app.on_message(filters.command('delete'))
 async def delete_countdown(client, message):
-    if not await in_admin_group(message):
-        return await reply_error_message(message, ERR_P_2)
+    if not await in_admin_group(message): return
     if not (countdown_names := get_countdowns()):
         return await reply_error_message(message, ERR_P_4)
     sequence = get_new_sequence(message, 'delete_countdown')
@@ -391,8 +385,7 @@ async def delete_countdown(client, message):
 
 @app.on_message(filters.command('stop'))
 async def stop_running_countdown(client, message):
-    if not await in_admin_group(message):
-        return await reply_error_message(message, ERR_P_2)
+    if not await in_admin_group(message): return
     if not (active_countdowns := get_active_countdown_names()):
         return await reply_error_message(message, ERR_P_3)
     sequence = get_new_sequence(message, 'stop_sequence')
@@ -406,11 +399,9 @@ async def stop_running_countdown(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-# TODO # fix: mallock error message in kill command
 @app.on_message(filters.command('kill'))
 async def exit_application(client, message):
-    if not is_super_user(message):
-        return await reply_error_message(message, ERR_P_1)
+    if not await is_super_user(message): return
     try:
         await message.reply(TER_BOT_MSG)
         print(TER_BOT_MSG)
