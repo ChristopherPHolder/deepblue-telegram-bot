@@ -410,23 +410,21 @@ async def exit_application(client, message):
         await asyncio.sleep(e.x)
 
 # TODO feat: add empty replies
-@app.on_message(filters.command('re_active'))
+@app.on_message(filters.command('reactive'))
 async def re_active_running_processes(client, message):
-    await re_activate_running_countdowns(client, message)
+    await re_activate_running_countdowns()
 
-async def re_activate_running_countdowns(client, message):
+async def re_activate_running_countdowns():
     running_countdowns = get_running_countdowns()
     for running_countdown in running_countdowns:
-        countdown = get_countdown_by_id(
-            running_countdown['countdown_id']
-        )
+        countdown = get_countdown_by_id(running_countdown['countdown_id'])
         countdown_message = await app.get_messages(
             int(running_countdown['message_chat_id']),
             int(running_countdown['message_id'])
         )
-        asyncio.ensure_future(maintain_countdown_message(
-                            countdown, countdown_message))
-    print('mainting', countdown)
+        asyncio.ensure_future(
+            maintain_countdown_message(countdown, countdown_message)
+        )
 
 if __name__ == '__main__':
     print(RUN_BOT_MSG)
