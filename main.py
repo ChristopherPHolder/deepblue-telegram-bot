@@ -26,9 +26,11 @@ from running_countdowns import append_running_countdown,\
     remove_running_countdown, get_running_countdowns
 
 from messages import RUN_BOT_MSG, TER_BOT_MSG, HELP_MSG, CLEARED_SEQ,\
-    get_list_countdowns_message, get_list_running_countdowns_message
+    get_list_countdowns_message, get_list_running_countdowns_message,\
+    get_activated_countdown_message
 
-from error_messages import ERR_P_3, ERR_P_4, ERR_P_5, ERR_P_6, ERR_P_7
+from error_messages import ERR_P_3, ERR_P_4, ERR_P_5, ERR_P_6, ERR_P_7,\
+    ERR_P_8
 
 app_name = os.environ['APP_NAME']
 api_id = int(os.environ['API_ID'])
@@ -292,6 +294,7 @@ async def list_countdowns(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
+# TODO fix: only displays one countdown to set
 @app.on_message(filters.command('set'))
 async def set_countdown(client, message):
     countdown_names = get_countdown_names()
@@ -308,6 +311,8 @@ async def set_countdown(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
+#TODO fix: add retry message for name
+# TODO fix: catch text instead of date error
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
     if not await in_admin_group(message): return
@@ -364,6 +369,7 @@ async def clear_active_sequences(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
+# TODO feat: remove from running countdowns
 @app.on_message(filters.command('delete'))
 async def delete_countdown(client, message):
     if not await in_admin_group(message): return
@@ -407,13 +413,16 @@ async def exit_application(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-# TODO feat: add empty replies
 @app.on_message(filters.command('reactive'))
 async def re_active_running_processes(client, message):
-    await re_activate_running_countdowns()
+    if not await is_super_user: return
+    if not get_running_countdowns():
+        return await reply_error_message(message, ERR_P_8)
+    await re_activate_running_countdowns(message)
 
-async def re_activate_running_countdowns():
+async def re_activate_running_countdowns(message):
     running_countdowns = get_running_countdowns()
+    complete_activation_message = 'List of activated messages:'
     for running_countdown in running_countdowns:
         countdown = get_countdown_by_id(running_countdown['countdown_id'])
         countdown_message = await app.get_messages(
@@ -423,6 +432,14 @@ async def re_activate_running_countdowns():
         asyncio.ensure_future(
             maintain_countdown_message(countdown, countdown_message)
         )
+        activation_message = get_activated_countdown_message(
+            countdown, running_countdown
+        )
+        complete_activation_message += activation_message
+    try:
+        await message.reply(activation_message)
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
 
 if __name__ == '__main__':
     print(RUN_BOT_MSG)

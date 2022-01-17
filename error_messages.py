@@ -11,3 +11,5 @@ ERR_P_5 = 'Sorry, their are no countdowns to preview!'
 ERR_P_6 = 'Sorry, their are no countdowns to edit!'
 
 ERR_P_7 = 'Sorry, their are no countdowns to list out!'
+
+ERR_P_8 = 'Sorry, their are no running countdowns to reactivate!'

@@ -32,3 +32,7 @@ def get_list_running_countdowns_message(running_countdowns):
             f" in {countdown['message_chat_title']}\n"
         message += countdown_item
     return message
+
+def get_activated_countdown_message(countdown, running_countdown):
+    return f"{countdown['countdown_name']} activated in "+\
+        f"{running_countdown['message_chat_title']}\n"
