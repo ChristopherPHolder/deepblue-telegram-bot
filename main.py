@@ -294,7 +294,6 @@ async def list_countdowns(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-# TODO fix: only displays one countdown to set
 @app.on_message(filters.command('set'))
 async def set_countdown(client, message):
     countdown_names = get_countdown_names()

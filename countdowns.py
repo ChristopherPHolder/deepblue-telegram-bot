@@ -174,7 +174,7 @@ def get_countdown_names():
     countdown_names = []
     for countdown in countdowns:
         countdown_names.append([countdown['countdown_name']])
-        return countdown_names
+    return countdown_names
 
 def get_active_countdown_names():
     countdowns = get_countdowns()
