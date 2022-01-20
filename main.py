@@ -41,10 +41,13 @@ app = Client(app_name, api_id, api_hash, bot_token)
 
 async def extract_field_data(input_type, message):
     if input_type == 'text':
-        return message.text
+        try:
+            return message.text
+        except Exception as e:
+            print('Error during name extraction', e)
     if input_type == 'date_time':
         try:
-            if is_valid_datetime(message.text): 
+            if is_valid_datetime(message.text):
                 return message.text
         except AttributeError as e:
             print(e, 'Error verifing date time input!')
@@ -310,7 +313,7 @@ async def set_countdown(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-#TODO fix: add retry message for name
+# TODO fix: add retry message for name
 # TODO fix: catch text instead of date error
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):

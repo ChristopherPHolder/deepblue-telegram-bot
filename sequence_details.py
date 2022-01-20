@@ -4,7 +4,8 @@ create_actions = [
         'field_name': 'countdown_name',
         'input_type': 'text',
         'followup_action': 'add_date',
-        'followup_message': f'What is the end date and time for the countdown?'
+        'followup_message': f'What is the end date and time for the countdown?',
+        'retry_message':  'Sorry, i dont understand. The message must be text\n Please try again!',
     },
     {
         'action_name': 'add_date',

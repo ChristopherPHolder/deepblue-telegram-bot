@@ -12,10 +12,10 @@ app = Client(app_name, api_id, api_hash, bot_token)
 
 def is_valid_datetime(user_input):
     try:
-        convert_input_to_datetime(user_input)
-        return True
+        if convert_input_to_datetime(user_input):
+            return True
     except IndexError as e:
-        return False
+        return print(e)
 
 def convert_input_to_datetime(user_input):
     try:
@@ -31,5 +31,5 @@ def convert_input_to_datetime(user_input):
         )
 
         return countdown_date_in_datetime
-    except IndexError as e:
+    except Exception as e:
         print(e, 'Attempted to format datetime')
