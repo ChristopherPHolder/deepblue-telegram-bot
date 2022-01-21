@@ -30,7 +30,7 @@ from messages import RUN_BOT_MSG, TER_BOT_MSG, HELP_MSG, CLEARED_SEQ,\
     get_activated_countdown_message
 
 from error_messages import ERR_P_3, ERR_P_4, ERR_P_5, ERR_P_6, ERR_P_7,\
-    ERR_P_8
+    ERR_P_8, ERR_P_9
 
 app_name = os.environ['APP_NAME']
 api_id = int(os.environ['API_ID'])
@@ -50,12 +50,12 @@ async def extract_field_data(input_type, message):
             if is_valid_datetime(message.text):
                 return message.text
         except AttributeError as e:
-            print(e, 'Error verifing date time input!')
+            print('Error verifing date time input!', e)
     elif input_type == 'image':
         try:
             return await app.download_media(message)
         except ValueError as e:
-            print(e, 'Failed attempt to extract media!')
+            print('Failed attempt to extract media!', e)
 
 async def reply_error_message(message, error_message):
     try:
@@ -123,7 +123,7 @@ async def handle_set_sequence(sequence, message):
             await set_maintain_countdown_message(countdown, message)
 
 async def handle_stop_sequence(sequence, message):
-    for action in sequence_details['set_actions']:
+    for action in sequence_details['stop_actions']:
         if sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown':
             countdown_name = message.text
@@ -131,6 +131,7 @@ async def handle_stop_sequence(sequence, message):
             field_name, field_data = 'countdown_state', 'stoped'
             update_countdown(countdown, field_name, field_data) 
             remove_sequence(sequence)
+            await message.reply('Countdown has been sucessfully stoped!')
 
 async def handle_preview_sequence(sequence, message):
     for action in sequence_details['set_actions']:
@@ -139,7 +140,6 @@ async def handle_preview_sequence(sequence, message):
             countdown_name = message.text
             remove_sequence(sequence)
             countdown = get_countdown_by_name(countdown_name)
-            print(countdown)
             try:
                 await app.send_photo(
                     message.chat.id, countdown['countdown_image'],
@@ -154,13 +154,17 @@ async def handle_preview_sequence(sequence, message):
                 await asyncio.sleep(e.x)
 
 async def handle_delete_sequence(sequence, message):
-    for action in sequence_details['set_actions']:
+    for action in sequence_details['delete_actions']:
         if sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown':
             countdown_name = message.text
             remove_sequence(sequence)
             countdown = get_countdown_by_name(countdown_name)
             remove_countdown(countdown)
+            try:
+                await message.reply('Countdown was sucessfully deleted!')
+            except FloodWait as e:
+                await asyncio.sleep(e.x)
 
 async def set_maintain_countdown_message(countdown, message):
     try:
@@ -176,9 +180,14 @@ async def set_maintain_countdown_message(countdown, message):
         await asyncio.sleep(e.x)
 
 async def maintain_countdown_message(countdown, countdown_message):
-    countdown = get_countdown_by_id(countdown['countdown_id'])
-    while countdown['countdown_state'] == 'active':
+    try:
         countdown = get_countdown_by_id(countdown['countdown_id'])
+    except Exception as e:
+        print(e)
+        remove_running_countdown(countdown_message)
+    while countdown['countdown_state'] == 'active':
+        if not (countdown := get_countdown_by_id(countdown['countdown_id'])):
+            return await remove_running_countdown(countdown_message)
         if is_countdown_completed(countdown):
             return await handle_countdown_ending(countdown, countdown_message)
         updated_caption = get_updated_caption(countdown)
@@ -192,6 +201,7 @@ async def handle_countdown_ending(countdown, countdown_message):
     await countdown_message.delete()
     field_name, field_data = 'countdown_state', 'completed'
     update_countdown(countdown, field_name, field_data)
+    remove_running_countdown(countdown_message)
     end_message = await app.send_photo(
         countdown_message.chat.id, countdown['countdown_end_image'],
         caption=countdown['countdown_end_caption']
@@ -289,7 +299,7 @@ async def list_countdowns(client, message):
     list_countdowns_message = get_list_countdowns_message(countdowns)
     running_countdowns = get_running_countdowns()
     list_running_countdowns_message = get_list_running_countdowns_message(
-        running_countdowns
+        running_countdowns, countdowns
     )
     try:
         await message.reply(list_running_countdowns_message)
@@ -301,7 +311,7 @@ async def list_countdowns(client, message):
 async def set_countdown(client, message):
     countdown_names = get_countdown_names()
     if not countdown_names:
-        return await reply_error_message(message, ERR_P_7)
+        return await reply_error_message(message, ERR_P_9)
     sequence = get_new_sequence(message, 'set_countdown')
     append_sequence(sequence)
     try:
@@ -314,7 +324,6 @@ async def set_countdown(client, message):
         await asyncio.sleep(e.x)
 
 # TODO fix: add retry message for name
-# TODO fix: catch text instead of date error
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
     if not await in_admin_group(message): return
@@ -371,7 +380,6 @@ async def clear_active_sequences(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-# TODO feat: remove from running countdowns
 @app.on_message(filters.command('delete'))
 async def delete_countdown(client, message):
     if not await in_admin_group(message): return
@@ -394,7 +402,7 @@ async def stop_running_countdown(client, message):
     if not await in_admin_group(message): return
     if not (active_countdowns := get_active_countdown_names()):
         return await reply_error_message(message, ERR_P_3)
-    sequence = get_new_sequence(message, 'stop_sequence')
+    sequence = get_new_sequence(message, 'stop_countdown')
     append_sequence(sequence)
     try:
         await message.reply('Which countdown do you want to stop?',
@@ -415,9 +423,9 @@ async def exit_application(client, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-@app.on_message(filters.command('reactive'))
+@app.on_message(filters.command('reactivate'))
 async def re_active_running_processes(client, message):
-    if not await is_super_user: return
+    if not is_super_user: return
     if not get_running_countdowns():
         return await reply_error_message(message, ERR_P_8)
     await re_activate_running_countdowns(message)
@@ -427,6 +435,8 @@ async def re_activate_running_countdowns(message):
     complete_activation_message = 'List of activated messages:'
     for running_countdown in running_countdowns:
         countdown = get_countdown_by_id(running_countdown['countdown_id'])
+        if not countdown:
+            return remove_running_countdown(running_countdown)
         countdown_message = await app.get_messages(
             int(running_countdown['message_chat_id']),
             int(running_countdown['message_id'])
