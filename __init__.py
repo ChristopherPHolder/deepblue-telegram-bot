@@ -1,5 +1,7 @@
 import sqlite3
 
+from config_parser import DB_NAME
+
 def iniciate_countdowns_table(cur):
     cur.execute("""CREATE TABLE countdowns (
         countdown_id text, 
@@ -24,7 +26,7 @@ def initciate_running_countdown_table(cur):
     )""")
 
 if __name__ == '__main__':
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     iniciate_countdowns_table(cur)
     initciate_running_countdown_table(cur)

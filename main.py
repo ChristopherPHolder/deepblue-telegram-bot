@@ -28,14 +28,13 @@ from messages import RUN_BOT_MSG, TER_BOT_MSG, HELP_MSG, CLEARED_SEQ,\
 from error_messages import ERR_P_3, ERR_P_4, ERR_P_5, ERR_P_6, ERR_P_7,\
     ERR_P_8, ERR_P_9
 
-import configparser
-config = configparser.ConfigParser()
-config.read('config.ini')
+from config_parser import APP_NAME, API_ID, API_HASH, BOT_TOKEN
 
-app_name = config.get('Credencials', 'APP_NAME')
-api_id = int(config.get('Credencials', 'API_ID'))
-api_hash = config.get('Credencials', 'API_HASH')
-bot_token = config.get('Credencials', 'API_HASH')
+
+app_name = APP_NAME
+api_id = API_ID
+api_hash = API_HASH
+bot_token = BOT_TOKEN
 
 app = Client(app_name, api_id, api_hash, bot_token)
 

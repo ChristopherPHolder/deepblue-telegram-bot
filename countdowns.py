@@ -1,5 +1,6 @@
 import sqlite3
-from countdown import Countdown
+
+from config_parser import DB_NAME
 
 from datetime import datetime, timezone
 
@@ -94,21 +95,21 @@ def update_countdown_in_db(cur, field_name, field_data, countdown):
         })
 
 def append_countdown(countdown):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     insert_countdown(countdown, cur)
     conn.commit()
     conn.close()
 
 def remove_countdown(countdown):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     delete_countdown(countdown, cur)
     conn.commit()
     conn.close()
 
 def update_countdown(countdown, field_name, field_data):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     update_countdown_in_db(cur, field_name, field_data, countdown)
     conn.commit()
@@ -132,7 +133,7 @@ def select_all_countdowns(cur):
     cur.execute(""" SELECT * FROM countdowns """)
 
 def get_countdown_by_id(countdown_id):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     select_countdown_by_id(cur, countdown_id)
     countdown = cur.fetchone()
@@ -140,7 +141,7 @@ def get_countdown_by_id(countdown_id):
     return convert_countdown_tuple_to_dict(countdown)
 
 def get_countdown_by_name(countdown_name):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     select_countdown_by_name(cur, countdown_name)
     countdown = cur.fetchone()
@@ -148,7 +149,7 @@ def get_countdown_by_name(countdown_name):
     return convert_countdown_tuple_to_dict(countdown)
 
 def get_countdowns():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     select_all_countdowns(cur)
     countdowns = cur.fetchall()

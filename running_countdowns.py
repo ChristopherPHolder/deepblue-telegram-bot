@@ -1,5 +1,7 @@
 import sqlite3
 
+from config_parser import DB_NAME
+
 def select_all_running_countdowns(cur):
     cur.execute(""" SELECT * FROM running_countdowns """)
 
@@ -32,21 +34,21 @@ def delete_running_countdown(countdown_message, cur):
     })
 
 def append_running_countdown(countdown, countdown_message):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     insert_running_countdown(countdown, countdown_message, cur)
     conn.commit()
     conn.close()
 
 def remove_running_countdown(countdown_message):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     delete_running_countdown(countdown_message, cur)
     conn.commit()
     conn.close()
 
 def get_running_countdowns():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_NAME)
     cur = conn.cursor()
     select_all_running_countdowns(cur)
     countdowns = cur.fetchall()
