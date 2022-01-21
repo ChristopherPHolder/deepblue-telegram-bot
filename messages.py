@@ -25,13 +25,21 @@ def get_list_countdowns_message(countdowns):
         message += countdown_item
     return message
 
-def get_list_running_countdowns_message(running_countdowns):
-    message = 'List of running countdowns:\n'
-    for count, countdown in enumerate(running_countdowns):
-        countdown_item = f"{str(count+1)}- {countdown['countdown_id']}" +\
-            f" in {countdown['message_chat_title']}\n"
-        message += countdown_item
-    return message
+def get_list_running_countdowns_message(running_countdowns, countdowns):
+    try:
+        message = 'List of running countdowns:\n'
+        for count, running_countdown in enumerate(running_countdowns):
+            for countdown in countdowns:
+                if countdown['countdown_id'] == running_countdown['countdown_id']:
+                    countdown_name = countdown['countdown_name']
+            countdown_item = (
+                f"{str(count + 1)}- {countdown_name}" +\
+                f" in {running_countdown['message_chat_title']}\n")
+            message += countdown_item
+        return message
+    except Exception as e:
+        print(e)
+        return 'Error'
 
 def get_activated_countdown_message(countdown, running_countdown):
     return f"{countdown['countdown_name']} activated in "+\
