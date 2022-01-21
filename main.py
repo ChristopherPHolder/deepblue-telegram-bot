@@ -10,7 +10,7 @@ from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 
 from permissions import in_admin_group, is_super_user
 
-from user_input_extractor import is_valid_datetime
+from user_input_extractor import extract_field_data
 
 from sequence_details import sequence_details
 
@@ -43,24 +43,6 @@ bot_token = config.get('Credencials', 'API_HASH')
 
 app = Client(app_name, api_id, api_hash, bot_token)
 
-async def extract_field_data(input_type, message):
-    if input_type == 'text':
-        try:
-            return message.text
-        except Exception as e:
-            print('Error during name extraction', e)
-    if input_type == 'date_time':
-        try:
-            if is_valid_datetime(message.text):
-                return message.text
-        except AttributeError as e:
-            print('Error verifing date time input!', e)
-    elif input_type == 'image':
-        try:
-            return await app.download_media(message)
-        except ValueError as e:
-            print('Failed attempt to extract media!', e)
-
 async def reply_error_message(message, error_message):
     try:
         return await message.reply(error_message)
@@ -85,7 +67,7 @@ async def handle_create_sequence(sequence, message):
     for action in sequence_details['create_actions']:
         if sequence['action'] == action['action_name']:
             input_type = action['input_type']
-            field_data = await extract_field_data(input_type, message)
+            field_data = await extract_field_data(app, input_type, message)
             if field_data:
                 countdown_id = str(sequence['countdown_id'])
                 countdown = get_countdown_by_id(countdown_id)
@@ -244,7 +226,7 @@ async def handle_edit_field_data(sequence, action, message):
     field_name = sequence['edit_field']
     countdown_id = sequence['countdown_id']
     input_type = get_field_input_type(field_name)
-    field_data = await extract_field_data(input_type, message)
+    field_data = await extract_field_data(app, input_type, message)
     countdown = get_countdown_by_id(countdown_id)
     update_countdown(countdown, field_name, field_data)
     remove_sequence(sequence)

@@ -3,12 +3,23 @@ from datetime import datetime, timezone
 
 from pyrogram import Client, filters
 
-app_name = os.environ['APP_NAME']
-api_id = int(os.environ['API_ID'])
-api_hash = os.environ['API_HASH']
-bot_token = os.environ['BOT_TOKEN']
-
-app = Client(app_name, api_id, api_hash, bot_token)
+async def extract_field_data(app, input_type, message):
+    if input_type == 'text':
+        try:
+            return message.text
+        except Exception as e:
+            print('Error during name extraction', e)
+    if input_type == 'date_time':
+        try:
+            if is_valid_datetime(message.text):
+                return message.text
+        except AttributeError as e:
+            print('Error verifing date time input!', e)
+    elif input_type == 'image':
+        try:
+            return await app.download_media(message)
+        except ValueError as e:
+            print('Failed attempt to extract media!', e)
 
 def is_valid_datetime(user_input):
     try:
