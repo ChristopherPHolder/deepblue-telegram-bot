@@ -32,10 +32,14 @@ from messages import RUN_BOT_MSG, TER_BOT_MSG, HELP_MSG, CLEARED_SEQ,\
 from error_messages import ERR_P_3, ERR_P_4, ERR_P_5, ERR_P_6, ERR_P_7,\
     ERR_P_8, ERR_P_9
 
-app_name = os.environ['APP_NAME']
-api_id = int(os.environ['API_ID'])
-api_hash = os.environ['API_HASH']
-bot_token = os.environ['BOT_TOKEN']
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+app_name = config.get('Credencials', 'APP_NAME')
+api_id = int(config.get('Credencials', 'API_ID'))
+api_hash = config.get('Credencials', 'API_HASH')
+bot_token = config.get('Credencials', 'API_HASH')
 
 app = Client(app_name, api_id, api_hash, bot_token)
 
