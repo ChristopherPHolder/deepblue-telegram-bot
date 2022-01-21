@@ -157,17 +157,20 @@ def get_countdowns():
 
 def convert_countdown_tuple_to_dict(countdown):
     countdown_tuple = countdown
-    return {
-        'countdown_id': countdown_tuple[0],
-        'countdown_owner_id': countdown_tuple[1],
-        'countdown_name': countdown_tuple[2],
-        'countdown_date': countdown_tuple[3],
-        'countdown_image': countdown_tuple[4],
-        'countdown_caption': countdown_tuple[5],
-        'countdown_end_image': countdown_tuple[6],
-        'countdown_end_caption': countdown_tuple[7],
-        'countdown_state': countdown_tuple[8]
-    }
+    try:
+        return {
+            'countdown_id': countdown_tuple[0],
+            'countdown_owner_id': countdown_tuple[1],
+            'countdown_name': countdown_tuple[2],
+            'countdown_date': countdown_tuple[3],
+            'countdown_image': countdown_tuple[4],
+            'countdown_caption': countdown_tuple[5],
+            'countdown_end_image': countdown_tuple[6],
+            'countdown_end_caption': countdown_tuple[7],
+            'countdown_state': countdown_tuple[8]
+        }
+    except Exception as e:
+        print(e)
 
 def get_countdown_names():
     countdowns = get_countdowns()
