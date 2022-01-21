@@ -4,7 +4,6 @@ def select_all_running_countdowns(cur):
     cur.execute(""" SELECT * FROM running_countdowns """)
 
 def insert_running_countdown(countdown, countdown_message, cur):
-    print("Inseting countdown to running_countdown")
     cur.execute(""" INSERT INTO running_countdowns VALUES (
         :countdown_id,
         :countdown_owner_id,
@@ -22,10 +21,14 @@ def insert_running_countdown(countdown, countdown_message, cur):
     })
 
 def delete_running_countdown(countdown_message, cur):
-    cur.execute(""" DELETE FROM countdowns WHERE (
+    try:
+        countdown_id = countdown_message['countdown_id']
+    except Exception as e:
+        countdown_id = countdown_message.message_id
+    cur.execute(""" DELETE FROM running_countdowns WHERE (
         countdown_id = :countdown_id
     )""", {
-        'countdown_id': countdown_message.message_id
+        'countdown_id': countdown_id
     })
 
 def append_running_countdown(countdown, countdown_message):
