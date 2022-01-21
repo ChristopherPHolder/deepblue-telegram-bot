@@ -11,3 +11,6 @@ BOT_TOKEN = config.get('Credencials', 'BOT_TOKEN')
 # Database information
 DB_NAME = config.get('Database', 'DB_NAME')
 
+# Admin information
+ADMIN_GROUP = int(config.get('Admin', 'ADMIN_GROUP'))
+SUPER_USER = int(config.get('Admin', 'SUPER_USER'))
