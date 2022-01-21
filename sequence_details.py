@@ -98,5 +98,6 @@ sequence_details = {
     'create_actions': create_actions,
     'edit_actions': edit_actions,
     'set_actions': set_actions,
-    'stop_actions': stop_actions
+    'stop_actions': stop_actions,
+    'delete_actions': delete_actions
 }
