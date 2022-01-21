@@ -214,3 +214,10 @@ def get_new_countdown(countdown_id, message):
         'countdown_end_caption': "Empty",
         'countdown_state': "Pending"
         }
+
+def create_display_countdown_fields():
+    return [
+        ['countdown_name', 'countdown_date'],
+        ['countdowns_image', 'countdown_caption'],
+        ['countdowns_end_image', 'countdown_end_caption']
+    ]

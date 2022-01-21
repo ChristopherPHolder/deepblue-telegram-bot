@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 async def extract_field_data(app, input_type, message):
     if input_type == 'text':
         try:
+            print(message)
+            print(message.text)
             return message.text
         except Exception as e:
             print('Error during name extraction', e)
