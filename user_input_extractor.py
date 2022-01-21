@@ -1,8 +1,6 @@
 import os
 from datetime import datetime, timezone
 
-from pyrogram import Client, filters
-
 async def extract_field_data(app, input_type, message):
     if input_type == 'text':
         try:
