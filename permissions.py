@@ -1,5 +1,7 @@
-from error_messages import ERR_P_1, ERR_P_2
+from telnetlib import STATUS
+from error_messages import ERR_P_1, ERR_P_2, ERR_P_10, ERR_P_11, ERR_P_12
 from config_parser import ADMIN_GROUP, SUPER_USER
+
 async def in_admin_group(message):
     admin_group_id = ADMIN_GROUP
     current_group_id = message.chat.id
@@ -13,3 +15,12 @@ async def is_super_user(message):
     if super_user_id != current_user_id:
         await message.reply(ERR_P_1)
     else: return True
+
+async def user_is_bot_admin(app, message):
+    user = message.from_user
+    admins = await app.get_chat_members(ADMIN_GROUP)
+    for admin in admins:
+        if user.id == admin.user.id:
+            return True
+    await message.reply(ERR_P_12)
+    return False

@@ -5,7 +5,7 @@ from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 
-from permissions import in_admin_group, is_super_user
+from permissions import in_admin_group, is_super_user, user_is_bot_admin
 
 from handlers.handle_set_sequence import maintain_countdown_message
 from handlers.handle_sequences import handle_sequence
@@ -77,7 +77,8 @@ async def list_countdowns(client, message):
         await asyncio.sleep(e.x)
 
 @app.on_message(filters.command('set'))
-async def set_countdown(client, message):
+async def set_countdown(app, message):
+    if not await user_is_bot_admin(app, message): return
     countdown_names = get_countdown_names()
     if not countdown_names:
         return await reply_error_message(message, ERR_P_9)

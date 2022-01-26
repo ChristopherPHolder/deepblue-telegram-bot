@@ -15,3 +15,9 @@ ERR_P_7 = 'Sorry, their are no countdowns to list out!'
 ERR_P_8 = 'Sorry, their are no running countdowns to reactivate!'
 
 ERR_P_9 = 'Sorry, their are not countdowns to set!'
+
+ERR_P_10 = 'Permission Error!\nThis command can only be used if the bot is a group admin!'
+
+ERR_P_11 = 'Permission Error!\nThis command can only be used by a group admin!'
+
+ERR_P_12 = 'Permission Error!\nThis command can only be used by a bot admin!'
