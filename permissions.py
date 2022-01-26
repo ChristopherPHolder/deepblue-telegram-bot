@@ -1,5 +1,6 @@
 from telnetlib import STATUS
-from error_messages import ERR_P_1, ERR_P_2, ERR_P_10, ERR_P_11, ERR_P_12
+from error_messages import ERR_P_1, ERR_P_2, ERR_P_10, ERR_P_11, ERR_P_12,\
+    ERR_P_13
 from config_parser import ADMIN_GROUP, SUPER_USER
 
 async def in_admin_group(message):
@@ -23,4 +24,21 @@ async def user_is_bot_admin(app, message):
         if user.id == admin.user.id:
             return True
     await message.reply(ERR_P_12)
+    return False
+
+async def has_chat_set_permissions(app, message):
+    bot = await app.get_me()
+    chat = message.chat
+    if chat.type == 'private':
+        await message.reply(ERR_P_13)
+        return False
+    elif chat.type == 'group':
+        member = await chat.get_member(bot.id)
+        if member.status == 'administrator': return True
+        await message.reply(ERR_P_12)
+        return False
+    elif chat.type == 'supergroup':
+        # TODO and remove fall back from SET handler!
+        print('Working on a method to test supergroup')
+        return True
     return False

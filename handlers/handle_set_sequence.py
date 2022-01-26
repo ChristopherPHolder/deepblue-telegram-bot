@@ -9,6 +9,8 @@ from running_countdowns import remove_running_countdown, append_running_countdow
 
 from sequence_details import sequence_details
 
+from error_messages import ERR_P_10
+
 async def handle_set_sequence(app, sequence, message):
     for action in sequence_details['set_actions']:
         if sequence['action'] == action['action_name']\
@@ -26,7 +28,13 @@ async def set_maintain_countdown_message(app, countdown, message):
             message.chat.id, countdown['countdown_image'],
             caption = get_updated_caption(countdown)
             )
-        await countdown_message.pin()
+        try:
+            await countdown_message.pin()
+        except Exception as e:
+            await message.reply(ERR_P_10)
+            await countdown_message.delete()
+            print('Error!', e)
+            return e
         append_running_countdown(countdown, countdown_message)
         await asyncio.sleep(random.randint(4, 8))
         asyncio.ensure_future(maintain_countdown_message(app, countdown, countdown_message))

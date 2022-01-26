@@ -21,3 +21,6 @@ ERR_P_10 = 'Permission Error!\nThis command can only be used if the bot is a gro
 ERR_P_11 = 'Permission Error!\nThis command can only be used by a group admin!'
 
 ERR_P_12 = 'Permission Error!\nThis command can only be used by a bot admin!'
+
+ERR_P_13 = 'Permission Error!\nThis command can only be used in a group or supergroup!'
+
