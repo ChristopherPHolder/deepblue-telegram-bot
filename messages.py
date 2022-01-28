@@ -44,3 +44,9 @@ def get_list_running_countdowns_message(running_countdowns, countdowns):
 def get_activated_countdown_message(countdown, running_countdown):
     return f"{countdown['countdown_name']} activated in "+\
         f"{running_countdown['message_chat_title']}\n"
+
+def get_formated_start_caption(time_remaining, caption):
+    if '####' in caption:
+        return caption.replace('####', time_remaining)
+    else:
+        return f'{time_remaining}\n\n{caption}'

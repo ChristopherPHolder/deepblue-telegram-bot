@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 
 from user_input_extractor import convert_input_to_datetime
 
+from messages import get_formated_start_caption
+
 def insert_countdown(countdown, cur):
     cur.execute(""" INSERT INTO countdowns VALUES (
         :countdown_id, 
@@ -193,10 +195,9 @@ def get_updated_caption(countdown):
     time_remaining = str(
         countdown_date - datetime.now(timezone.utc)
         ).split('.')[0]
-    formated_countdown = (
-        f'{countdown["countdown_caption"]}\n\n{time_remaining}'
-    )
-    return formated_countdown
+    caption = countdown["countdown_caption"]
+    updated_caption = get_formated_start_caption(time_remaining, caption)
+    return updated_caption
 
 def is_countdown_completed(countdown):
     countdown_date = convert_input_to_datetime(countdown["countdown_date"])
