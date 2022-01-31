@@ -95,7 +95,6 @@ async def set_countdown(app, message):
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
-# TODO fix: add retry message for name
 @app.on_message(filters.command('create'))
 async def create_countdown(client, message):
     if not await in_admin_group(message): return
@@ -106,7 +105,7 @@ async def create_countdown(client, message):
     append_sequence(sequence)
     try:
         await message.reply('What do you want to name the countdown?', 
-            reply_markup=ForceReply()
+            reply_markup=ForceReply(selective=True)
             )
     except FloodWait as e:
         await asyncio.sleep(e.x)
@@ -228,3 +227,6 @@ async def re_activate_running_countdowns(app, message):
 if __name__ == '__main__':
     print(RUN_BOT_MSG)
     app.run()
+
+# TODO Fix issue where image is not acpeted
+# TODO accept videos instead of captions

@@ -18,11 +18,11 @@ async def handle_create_sequence(app, sequence, message):
                 if action['followup_action']:
                     sequence.update({'action': action['followup_action']})
                     return await app.send_message(message.chat.id, 
-                        action['followup_message'], reply_markup=ForceReply())
+                        action['followup_message'], reply_markup=ForceReply(selective=True))
                 else:
                     remove_sequence(sequence)
                     return await app.send_message(message.chat.id, 
                         action['followup_message'])
             else:
                 return await app.send_message(message.chat.id, 
-                    action['retry_message'], reply_markup=ForceReply())
+                    action['retry_message'], reply_markup=ForceReply(selective=True))

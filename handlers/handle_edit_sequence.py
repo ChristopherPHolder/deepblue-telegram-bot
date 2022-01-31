@@ -47,7 +47,7 @@ async def handle_select_edit_field(app, sequence, action, message):
     try:
         return await app.send_message(
             message.chat.id, action['followup_message'],
-            reply_markup=(ForceReply())
+            reply_markup=(ForceReply(selective=True))
         )
     except FloodWait as e:
         await asyncio.sleep(e.x)
