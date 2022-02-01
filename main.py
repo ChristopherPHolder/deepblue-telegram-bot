@@ -8,29 +8,24 @@ from pyrogram.types import ReplyKeyboardMarkup, ForceReply
 from permissions import in_admin_group, is_super_user, user_is_bot_admin,\
     has_chat_set_permissions
 
-from handlers.handle_set_sequence import maintain_countdown_message
 from handlers.handle_sequences import handle_sequence
+from handlers.handle_reactivate import handle_reactivate
 
-from countdowns import append_countdown,\
-    get_countdowns, get_countdown_by_id,\
-    get_active_countdown_names, get_countdown_names, get_new_countdown,\
-    get_new_countdown
+from countdowns import append_countdown, get_countdowns,\
+    get_active_countdown_names, get_countdown_names, get_new_countdown
 
-from sequences import get_new_sequence,\
-    append_sequence, clear_sequences, get_sequences
+from sequences import get_new_sequence, append_sequence, clear_sequences,\
+    get_sequences
 
-from running_countdowns import append_running_countdown,\
-    remove_running_countdown, get_running_countdowns
+from running_countdowns import get_running_countdowns
 
 from messages import RUN_BOT_MSG, TER_BOT_MSG, HELP_MSG, CLEARED_SEQ,\
-    get_list_countdowns_message, get_list_running_countdowns_message,\
-    get_activated_countdown_message
+    get_list_countdowns_message, get_list_running_countdowns_message
 
 from error_messages import ERR_P_3, ERR_P_4, ERR_P_5, ERR_P_6, ERR_P_7,\
     ERR_P_8, ERR_P_9
 
 from config_parser import APP_NAME, API_ID, API_HASH, BOT_TOKEN
-
 
 app_name = APP_NAME
 api_id = API_ID
@@ -46,7 +41,7 @@ async def reply_error_message(message, error_message):
         await asyncio.sleep(e.x)
 
 @app.on_message(filters.reply)
-async def add_countdown_information(client, message):
+async def add_countdown_information(app, message):
     user_id = message.from_user.id
     sequences = get_sequences()
     for sequence in sequences:
@@ -54,7 +49,7 @@ async def add_countdown_information(client, message):
             return await handle_sequence(app, sequence, message)
 
 @app.on_message(filters.command('help'))
-async def help_message(client, message):
+async def help_message(app, message):
     if not await in_admin_group(message): return
     try:
         await message.reply(HELP_MSG)
@@ -62,7 +57,7 @@ async def help_message(client, message):
         await asyncio.sleep(e.x)
 
 @app.on_message(filters.command('list'))
-async def list_countdowns(client, message):
+async def list_countdowns(app, message):
     if not await in_admin_group(message): return
     if not (countdowns := get_countdowns()):
         return await reply_error_message(message, ERR_P_7)
@@ -96,7 +91,7 @@ async def set_countdown(app, message):
         await asyncio.sleep(e.x)
 
 @app.on_message(filters.command('create'))
-async def create_countdown(client, message):
+async def create_countdown(app, message):
     if not await in_admin_group(message): return
     countdown_id = str(uuid4())
     countdown = get_new_countdown(countdown_id, message)
@@ -199,30 +194,7 @@ async def re_active_running_processes(app, message):
     if not is_super_user: return
     if not get_running_countdowns():
         return await reply_error_message(message, ERR_P_8)
-    await re_activate_running_countdowns(app, message)
-
-async def re_activate_running_countdowns(app, message):
-    running_countdowns = get_running_countdowns()
-    complete_activation_message = 'List of activated messages:'
-    for running_countdown in running_countdowns:
-        countdown = get_countdown_by_id(running_countdown['countdown_id'])
-        if not countdown:
-            return remove_running_countdown(running_countdown)
-        countdown_message = await app.get_messages(
-            int(running_countdown['message_chat_id']),
-            int(running_countdown['message_id'])
-        )
-        asyncio.ensure_future(
-            maintain_countdown_message(app, countdown, countdown_message)
-        )
-        activation_message = get_activated_countdown_message(
-            countdown, running_countdown
-        )
-        complete_activation_message += activation_message
-    try:
-        await message.reply(activation_message)
-    except FloodWait as e:
-        await asyncio.sleep(e.x)
+    await handle_reactivate(app, message)
 
 if __name__ == '__main__':
     print(RUN_BOT_MSG)

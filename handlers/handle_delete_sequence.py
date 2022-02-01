@@ -11,8 +11,8 @@ async def handle_delete_sequence(app, sequence, message):
     for action in sequence_details['delete_actions']:
         if sequence['action'] == action['action_name']\
         and sequence['action'] == 'select_countdown':
-            countdown_name = message.text
             remove_sequence(sequence)
+            countdown_name = message.text
             countdown = get_countdown_by_name(countdown_name)
             remove_countdown(countdown)
             try:
