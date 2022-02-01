@@ -17,12 +17,16 @@ async def handle_create_sequence(app, sequence, message):
                 update_countdown(countdown, field_name, field_data)
                 if action['followup_action']:
                     sequence.update({'action': action['followup_action']})
-                    return await app.send_message(message.chat.id, 
-                        action['followup_message'], reply_markup=ForceReply(message.from_user.id, selective=True))
+                    mention = ' @' + message.from_user.username
+                    message_text = action['followup_message'] + mention
+                    return await app.send_message(message.chat.id, message_text,
+                                    reply_markup=ForceReply(selective=True))
                 else:
                     remove_sequence(sequence)
                     return await app.send_message(message.chat.id, 
-                        action['followup_message'])
+                                        action['followup_message'])
             else:
-                return await app.send_message(message.chat.id, 
-                    action['retry_message'], reply_markup=ForceReply(selective=True))
+                mention = ' @' + message.from_user.username
+                message_text = action['retry_message'] + mention
+                return await app.send_message(message.chat.id, message_text,
+                                            reply_markup=ForceReply(selective=True))

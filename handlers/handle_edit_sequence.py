@@ -29,13 +29,13 @@ async def handle_select_sequence_countdown(app, sequence, action, message):
     field_name, field_data = 'action', action['followup_action']
     update_sequence(sequence, field_name, field_data)
     try:
+        mention = ' @' + message.from_user.username
+        message_text = action['followup_message'] + mention
         return await app.send_message(
-            message.chat.id, action['followup_message'],
+            message.chat.id, message_text,
             reply_markup=ReplyKeyboardMarkup(
                 create_display_countdown_fields(), 
-                one_time_keyboard=True,selective=True
-                )
-            )
+                one_time_keyboard=True, selective=True))
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
@@ -45,9 +45,10 @@ async def handle_select_edit_field(app, sequence, action, message):
     field_name, field_data = 'action', action['followup_action']
     update_sequence(sequence, field_name, field_data)
     try:
-        return await app.send_message(
-            message.chat.id, action['followup_message'],
-            reply_markup=(ForceReply(selective=True))
+        mention = ' @' + message.from_user.username
+        message_text = action['followup_message'] + mention
+        return await app.send_message(message.chat.id, message_text,
+                            reply_markup=(ForceReply(selective=True))
         )
     except FloodWait as e:
         await asyncio.sleep(e.x)
