@@ -11,6 +11,8 @@ from sequence_details import sequence_details
 
 from error_messages import ERR_P_10
 
+from messages import send_countdown_message
+
 async def handle_set_sequence(app, sequence, message):
     for action in sequence_details['set_actions']:
         if sequence['action'] == action['action_name']\
@@ -24,10 +26,11 @@ async def handle_set_sequence(app, sequence, message):
 
 async def set_maintain_countdown_message(app, countdown, message):
     try:
-        countdown_message = await app.send_photo(
-            message.chat.id, countdown['countdown_image'],
-            caption = get_updated_caption(countdown)
-            )
+        chat = message.chat
+        media = countdown['countdown_image']
+        caption = get_updated_caption(countdown)
+        countdown_message = await send_countdown_message(app, chat, 
+                                                        media, caption)
         try:
             await countdown_message.pin()
         except Exception as e:
@@ -37,7 +40,8 @@ async def set_maintain_countdown_message(app, countdown, message):
             return e
         append_running_countdown(countdown, countdown_message)
         await asyncio.sleep(random.randint(4, 8))
-        asyncio.ensure_future(maintain_countdown_message(app, countdown, countdown_message))
+        asyncio.ensure_future(maintain_countdown_message(app, countdown,
+                                                        countdown_message))
     except FloodWait as e:
         await asyncio.sleep(e.x)
 
@@ -66,6 +70,5 @@ async def handle_countdown_ending(app, countdown, countdown_message):
     remove_running_countdown(countdown_message)
     end_message = await app.send_photo(
         countdown_message.chat.id, countdown['countdown_end_image'],
-        caption=countdown['countdown_end_caption']
-        )
+        caption=countdown['countdown_end_caption'])
     return await end_message.pin()

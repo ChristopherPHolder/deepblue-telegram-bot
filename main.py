@@ -229,4 +229,3 @@ if __name__ == '__main__':
     app.run()
 
 # TODO Fix issue where image is not acpeted
-# TODO accept videos instead of captions

@@ -4,8 +4,6 @@ from datetime import datetime, timezone
 async def extract_field_data(app, input_type, message):
     if input_type == 'text':
         try:
-            print(message)
-            print(message.text)
             return message.text
         except Exception as e:
             print('Error during name extraction', e)
@@ -44,3 +42,12 @@ def convert_input_to_datetime(user_input):
         return countdown_date_in_datetime
     except Exception as e:
         print(e, 'Attempted to format datetime')
+
+def check_media_type(media):
+    file_extention = media.split('.')[1]
+    if file_extention == 'jpg':
+        return 'photo'
+    elif file_extention == 'mp4':
+        return 'video'
+    else:
+        print('Error, file extention not accounted for', file_extention)

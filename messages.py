@@ -1,3 +1,7 @@
+import asyncio
+from user_input_extractor import check_media_type
+from pyrogram.errors import FloodWait
+
 RUN_BOT_MSG = 'Telegram bot is up and running!'
 
 TER_BOT_MSG = '🛑 I am being terminated good bye my friends.'
@@ -50,3 +54,16 @@ def get_formated_start_caption(time_remaining, caption):
         return caption.replace('####', time_remaining)
     else:
         return f'{time_remaining}\n\n{caption}'
+
+async def send_countdown_message(app, chat, media, caption):
+    media_type = check_media_type(media)
+    if media_type == 'photo':
+        try:
+            return await app.send_photo(chat.id, media, caption)
+        except FloodWait as e:
+            await asyncio.sleep(e.x)
+    elif media_type == 'video':
+        try:
+            return await app.send_video(chat.id, media, caption)
+        except FloodWait as e:
+            await asyncio.sleep(e.x)
