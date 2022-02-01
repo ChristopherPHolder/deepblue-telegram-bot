@@ -227,5 +227,3 @@ async def re_activate_running_countdowns(app, message):
 if __name__ == '__main__':
     print(RUN_BOT_MSG)
     app.run()
-
-# TODO Fix issue where image is not acpeted
